@@ -2,6 +2,7 @@ import numpy as np
 
 
 def consumption_utility(x):
+    """Instantaneous payoff function"""
 	v = np.log(x)
 	return v
 
@@ -17,5 +18,5 @@ def utility(par,c,r):
     return u
 
 def cost(s):
-	""" cost function """
+	""" cost from seaching function"""
 	return 5*s**2
