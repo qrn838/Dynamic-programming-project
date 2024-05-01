@@ -33,7 +33,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.b3 = 0.4*par.w    # Low transfers
 
 		# Preferences
-		par.eta = 1.0	 # Captures reference point
+		par.eta = 0	 # Captures reference point
 		par.sigma = 1.5  # Lambda in the paper, i.e. loss aversion
 		par.delta = 0.9  # Discount factor
 	
