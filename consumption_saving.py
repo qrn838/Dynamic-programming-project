@@ -82,13 +82,13 @@ def solve_search_and_consumption(par):
                     c = par.a_grid[i_a] + income - a_next / (1 + par.R)
                     V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[t+1, :])
                     V_e_next = V_e_next_interp(a_next)
-                    s = inv_marg_cost(par.delta*(V_u_next-V_e_next))
+                    s = inv_marg_cost(par.delta*(V_e_next-V_u_next))
                     V_u = (utility(par,c,r) - cost(s) + par.delta * (s * V_e_next+(1-s)*V_u_next))
                     return -V_u
                 
                 a_next_guess = par.a_grid[i_a]
                 # Perform optimization
-                result = minimize(objective_function, a_next_guess, args=(par,t,V_u_next[t,i_a]), bounds=[(par.L, par.A_0)])
+                result = minimize(objective_function, a_next_guess, args=(par,t,V_u_next[t+1,i_a]), bounds=[(par.L, par.A_0)])
                 # Extract optimal a_next
                 if result.success:
                     
@@ -96,7 +96,7 @@ def solve_search_and_consumption(par):
                     V_u[t, i_a] = -result.fun
                     V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[t+1, :])
                     V_e_next = V_e_next_interp(a_next[t,i_a])
-                    s[t,i_a] = inv_marg_cost(par.delta*(V_u_next[t,i_a]-V_e_next))
+                    s[t,i_a] = inv_marg_cost(par.delta*(V_e_next-V_u_next[t+1,i_a]))
                     c[t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[t,i_a] / (1 + par.R)
                 else:
                     print("Optimization failed at t={}, i_a={}".format(t, i_a))

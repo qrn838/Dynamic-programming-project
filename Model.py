@@ -34,14 +34,14 @@ class ReferenceDependenceClass(EconModelClass):
 		par.b3 = 0.4*par.w    # Low transfers
 
 		# Preferences
-		par.eta = 0.5  ### Reference dependence parameter
+		par.eta = 0.0  ### Reference dependence parameter
 		par.sigma = 1.5  ### Lambda in the paper
 		par.delta = 0.9  ### Discount factor
 
 		#Savings
 		par.R = 1/par.delta-0.05  #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -1.0  # borrowing constraint
+		par.L = -0.0  # borrowing constraint
 		par.Na = 20  #Number of grid points for savings
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 	
