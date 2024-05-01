@@ -24,7 +24,7 @@ def value_function_employment(par):
                 else:
                     def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
                         r = par.r_e_m[i_t, i_t + i_n]
-                        c = par.a_grid[i_a] + par.w - a_next / (1 + par.R)
+                        c = par.a_grid[i_a] + par.w - a_next / (par.R)
                         V_e_next_interp = interp1d(par.a_grid, V_e_next[i_t, i_n, :])
                         V_e = utility(par, c, r) + par.delta * V_e_next_interp(a_next)
                         return -V_e
@@ -62,24 +62,28 @@ def solve_search_and_consumption(par):
             if t == par.T - 1:
                 def objective_function(s, par):
                     V_e = par.V_e_t_a[par.T - 1,0]
-                    c = par.b3+par.R*par.L
+                    c = par.b3+(par.R-1)*par.L
+                    print(c)
                     V_u = (consumption_utility(c) - cost(s) + par.delta * (s * V_e)) / (1-par.delta*(1-s))
                     return -V_u
                 
                 s_initial_guess = 0.8
                 # Perform optimization
-                result = minimize(objective_function, s_initial_guess, args=(par,), bounds=[(0, 1)])
-                # Extract optimal s
-                s[t,i_a] = result.x[0]
-                V_u[t,i_a] = -result.fun
-                c[t,i_a] = par.b3+par.R*par.L
-                a_next[t,i_a] = par.L
+                result = minimize(objective_function, s_initial_guess, args=(par,), method='Nelder-Mead', bounds=[(0, 1)])
+                if result.success:
+                    # Extract optimal s
+                    s[t,i_a] = result.x[0]
+                    V_u[t,i_a] = -result.fun
+                    c[t,i_a] = par.b3+(par.R-1)*par.L
+                    a_next[t,i_a] = par.L
+                else:
+                    print("Optimization failed at t={}, i_a={}".format(t, i_a))
             
             else:
                 def objective_function(a_next, par,t,V_u_next):
                     income = par.income_u[t]
                     r = par.r_u[t]
-                    c = par.a_grid[i_a] + income - a_next / (1 + par.R)
+                    c = par.a_grid[i_a] + income - a_next / (par.R)
                     V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[t+1, :])
                     V_e_next = V_e_next_interp(a_next)
                     s = inv_marg_cost(par.delta*(V_e_next-V_u_next))
@@ -88,7 +92,9 @@ def solve_search_and_consumption(par):
                 
                 a_next_guess = par.a_grid[i_a]
                 # Perform optimization
-                result = minimize(objective_function, a_next_guess, args=(par,t,V_u_next[t+1,i_a]), bounds=[(par.L, par.A_0)])
+
+                result = minimize(objective_function, a_next_guess, args=(par, t, V_u_next[t+1,i_a]), method='Nelder-Mead', bounds=[(par.L, par.A_0)])
+                             
                 # Extract optimal a_next
                 if result.success:
                     
@@ -97,7 +103,7 @@ def solve_search_and_consumption(par):
                     V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[t+1, :])
                     V_e_next = V_e_next_interp(a_next[t,i_a])
                     s[t,i_a] = inv_marg_cost(par.delta*(V_e_next-V_u_next[t+1,i_a]))
-                    c[t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[t,i_a] / (1 + par.R)
+                    c[t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[t,i_a] / (par.R)
                 else:
                     print("Optimization failed at t={}, i_a={}".format(t, i_a))
 
