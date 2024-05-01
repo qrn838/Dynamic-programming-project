@@ -41,7 +41,40 @@ def unemployed_ss(par):
     return optimal_s_ss, V_u_ss
 
 
-### Backward Induction to solve search effort in all periods of unemployment ###
+# ### Backward Induction to solve search effort in all periods of unemployment ###
+
+# def solve_search_effort(par):
+#     # a. allocate
+#     s = np.zeros(par.T)
+#     V_u = np.zeros(par.T)
+
+#     # b. solve
+#     for t in range(par.T - 1, -1, -1):
+#         if t == par.T - 1:
+#             s[t], V_u[t] = unemployed_ss(par)
+        
+#         else:
+#             def objective_function(s, par,t,V_u_next):
+#                 V_e = value_function_employment(par, par.w, t+1)
+#                 income = par.income_u[t]
+#                 r = par.r_u[t]
+#                 V_u = (utility(par,income,r) - cost(s) + par.delta * (s * V_e+(1-s)*V_u_next))
+#                 return -V_u
+            
+#             s_initial_guess = s[t+1]
+#             # Perform optimization
+#             result = minimize(objective_function, s_initial_guess, args=(par,t,V_u_next), bounds=[(0, 1)])
+#             # Extract optimal s
+#             s[t] = result.x[0]
+#             V_u[t] = -result.fun
+        
+#         V_u_next = V_u[t]
+        
+
+#     return s, V_u
+
+
+## Backward Induction to solve search effort in all periods of unemployment ###
 
 def solve_search_effort(par):
     # a. allocate
@@ -54,23 +87,19 @@ def solve_search_effort(par):
             s[t], V_u[t] = unemployed_ss(par)
         
         else:
-            def objective_function(s, par,t,V_u_next):
-                V_e = value_function_employment(par, par.w, t+1)
-                income = par.income_u[t]
-                r = par.r_u[t]
-                V_u = (utility(par,income,r) - cost(s) + par.delta * (s * V_e+(1-s)*V_u_next))
-                return -V_u
-            
-            s_initial_guess = s[t+1]
-            # Perform optimization
-            result = minimize(objective_function, s_initial_guess, args=(par,t,V_u_next), bounds=[(0, 1)])
-            # Extract optimal s
-            s[t] = result.x[0]
-            V_u[t] = -result.fun
+           
+            V_e_next = value_function_employment(par, par.w, t+1)
+            income = par.income_u[t]
+            r = par.r_u[t]
+            x = par.delta*(V_e_next-V_u_next)
+
+            s[t] = inv_marg_cost(x)
+            V_u[t] = utility(par,income,r) - cost(s[t]) + par.delta * (s[t] * V_e_next+(1-s[t])*V_u_next)
         
         V_u_next = V_u[t]
         
 
     return s, V_u
+
 
    

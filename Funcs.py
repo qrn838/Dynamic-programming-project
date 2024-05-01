@@ -20,3 +20,11 @@ def utility(par,c,r):
 def cost(s):
 	""" cost from seaching function"""
 	return 5*s**2
+
+def marg_cost(s):
+    """ marginal cost from seaching function"""
+    return 10*s
+
+def inv_marg_cost(s):
+    """ inverse marginal cost from seaching function"""
+    return 1/10*s
