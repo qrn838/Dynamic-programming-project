@@ -20,6 +20,7 @@ class ReferenceDependenceClass(EconModelClass):
 		# a. model
   		
 		par.N = 15 #Number of reference periods
+		par.M = 20 #Number of ekstra periods to reach stationary state
 		# Transfers Structure
 		par.T1 = 10   #Time with high transfers
 		par.T2 = 10   #Time with medium transfers
@@ -28,14 +29,21 @@ class ReferenceDependenceClass(EconModelClass):
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
-		par.b1 = 0.7*par.w    # High transfers
-		par.b2 = 0.5*par.w    # Medium transfers
+		par.b1 = 0.5*par.w    # High transfers
+		par.b2 = 0.45*par.w    # Medium transfers
 		par.b3 = 0.4*par.w    # Low transfers
 
 		# Preferences
-		par.eta = 1.0
+		par.eta = 0.5  ### Reference dependence parameter
 		par.sigma = 1.5  ### Lambda in the paper
 		par.delta = 0.9  ### Discount factor
+
+		#Savings
+		par.R = 1/par.delta-0.05  #Interest rate
+		par.A_0 = 0.0  #Initial assets 
+		par.L = -1.0  # borrowing constraint
+		par.Na = 20  #Number of grid points for savings
+		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 	
 
 		par.Nstates_fixed = 0 # number of fixed states
@@ -88,7 +96,18 @@ class ReferenceDependenceClass(EconModelClass):
 		par.r_e_future = np.zeros((par.T, par.N))
 		for t in range(par.T):
 			par.r_e_future[t, :] = par.r_e[t, t:t+par.N]
-	
+		
+		#Reference point + m periods
+		tuple = (par.T, par.T+par.N+par.M)
+		par.r_e_m = np.zeros(tuple)
+		for t in range(par.T):
+			par.r_e_m[t, :par.T+par.N] = par.r_e[t, :par.T+par.N]
+			par.r_e_m[t, par.T+par.N:] = par.w
+
+
+		# Container for value functions
+		par.V_e_t_a = np.zeros((par.T, par.Na))
+
 
 		# b. states
 		par.Nstates = par.Nstates_dynamic + par.Nstates_fixed # number of states

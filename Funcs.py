@@ -19,3 +19,8 @@ def utility(par,c,r):
 def cost(s):
 	""" cost function """
 	return 5*s**2
+
+
+def inv_marg_cost(x):
+    """ inverse marginal cost function """
+    return 1/10*x
