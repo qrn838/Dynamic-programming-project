@@ -51,21 +51,11 @@ def solve_search_effort(par):
     # b. solve
     for t in range(par.T - 1, -1, -1):
         if t == par.T - 1:
-            def objective_function(s, par):
-                V_e = value_function_employment(par, par.w, t)
-                V_u = (consumption_utility(par.b3) - cost(s) + par.delta * (s * V_e+(1-s)*unemployed_ss(par)[1]))
-                return -V_u
-            
-            s_initial_guess = unemployed_ss(par)[0]
-            # Perform optimization
-            result = minimize(objective_function, s_initial_guess, args=(par,), bounds=[(0, 1)])
-            # Extract optimal s
-            s[t] = result.x[0]
-            V_u[t] = -result.fun
+            s[t], V_u[t] = unemployed_ss(par)
         
         else:
             def objective_function(s, par,t,V_u_next):
-                V_e = value_function_employment(par, par.w, t)
+                V_e = value_function_employment(par, par.w, t+1)
                 income = par.income_u[t]
                 r = par.r_u[t]
                 V_u = (utility(par,income,r) - cost(s) + par.delta * (s * V_e+(1-s)*V_u_next))

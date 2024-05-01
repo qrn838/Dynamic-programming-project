@@ -11,7 +11,7 @@ class ReferenceDependenceClass(EconModelClass):
 	def settings(self):
 		""" basic settings """
 		
-		self.namespaces = ['par'] # must be numba-able   R: Hvad fanden betyder det her?
+		self.namespaces = ['par'] 
 		#self.other_attrs = [] 
 
 	def setup(self):
@@ -28,13 +28,13 @@ class ReferenceDependenceClass(EconModelClass):
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
-		par.b1 = 0.7*par.w    # High transfers
+		par.b1 = 0.6*par.w    # High transfers
 		par.b2 = 0.5*par.w    # Medium transfers
 		par.b3 = 0.4*par.w    # Low transfers
 
 		# Preferences
-		par.eta = 0	 # Captures reference point
-		par.sigma = 1.5  # Lambda in the paper, i.e. loss aversion
+		par.eta = 1.0	 # Captures reference point
+		par.sigma = 5  # Lambda in the paper, i.e. loss aversion
 		par.delta = 0.9  # Discount factor
 	
 
@@ -62,12 +62,12 @@ class ReferenceDependenceClass(EconModelClass):
 		par.income_e = np.zeros((par.T, par.T))			# Empty array to store income
 		for t in range(par.T):
 			par.income_e[t, :] = par.income_u			# Income if unemployed
-			par.income_e[t, t:] = par.w					# Income after finding job
+			par.income_e[t, t:] = par.w					# Income after finding job SHOULD IT BE t+1: ?
 	
 	
 		# Reference points unemployed
 		par.r_u = np.zeros(par.T)						# Reference point given by last N periods income (page 1980 in DellaVigna)
-		# R: Jeg er ikke helt sikker på, hvad de næste 3 er?
+
 		par.ref_income_u = np.zeros(par.T+par.N)		# Stores the income history of unemployed individuals. 
 		par.ref_income_u[0:par.N] = par.w				# Some buffer zone? S: I første periode af arbejdsløshed er referencepointet givet ved lønnen
 		par.ref_income_u[par.N:] = par.income_u			# Stores actual income levels for unemployed individuals

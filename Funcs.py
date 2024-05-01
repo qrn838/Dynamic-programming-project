@@ -3,8 +3,8 @@ import numpy as np
 
 def consumption_utility(x):
     """Instantaneous payoff function"""
-	v = np.log(x)
-	return v
+    v = np.log(x)
+    return v
 
 
 def utility(par,c,r):
