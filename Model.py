@@ -29,19 +29,19 @@ class ReferenceDependenceClass(EconModelClass):
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
-		par.b1 = 0.5*par.w    # High transfers
-		par.b2 = 0.45*par.w    # Medium transfers
+		par.b1 = 0.7*par.w    # High transfers
+		par.b2 = 0.5*par.w    # Medium transfers
 		par.b3 = 0.4*par.w    # Low transfers
 
 		# Preferences
-		par.eta = 0.0  ### Reference dependence parameter
+		par.eta = 1.0  ### Reference dependence parameter
 		par.sigma = 1.5  ### Lambda in the paper
 		par.delta = 0.9  ### Discount factor
 
 		#Savings
 		par.R = 1/par.delta -0.05  #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -1.0  # borrowing constraint
+		par.L = -0.0  # borrowing constraint
 		par.Na = 20  #Number of grid points for savings
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 	

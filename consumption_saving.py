@@ -17,20 +17,20 @@ def value_function_employment(par):
             for i_a in range(par.Na):
                 if i_n == par.N+par.M - 1:
                     V_e[i_t, i_n, i_a] = consumption_utility(par.w) / (1 - par.delta)  ## stationary state
-                elif i_n == par.N - 2:
+                elif i_n == par.N+par.M - 2:
                     r = par.r_e_m[i_t, i_t + i_n]
                     c = par.a_grid[i_a] + par.w
-                    V_e[i_t, i_n, i_a] = utility(par, c, r) + par.delta * V_e_next[i_t, i_n, i_a]
+                    V_e[i_t, i_n, i_a] = utility(par, c, r) + par.delta * V_e_next[i_t, i_n+1, i_a]
                 else:
                     def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
                         r = par.r_e_m[i_t, i_t + i_n]
                         c = par.a_grid[i_a] + par.w - a_next / (par.R)
-                        V_e_next_interp = interp1d(par.a_grid, V_e_next[i_t, i_n, :])
+                        V_e_next_interp = interp1d(par.a_grid, V_e_next)
                         V_e = utility(par, c, r) + par.delta * V_e_next_interp(a_next)
                         return -V_e
 
                     a_next_guess = par.a_grid[i_a]
-                    result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next),
+                    result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]),
                                       bounds=[(par.L, par.A_0)])
                     a_next = result.x[0]
                     V_e[i_t, i_n, i_a] = -result.fun
@@ -63,7 +63,6 @@ def solve_search_and_consumption(par):
                 def objective_function(s, par):
                     V_e = par.V_e_t_a[par.T - 1,0]
                     c = par.b3+(par.R-1)*par.L
-                    print(c)
                     V_u = (consumption_utility(c) - cost(s) + par.delta * (s * V_e)) / (1-par.delta*(1-s))
                     return -V_u
                 

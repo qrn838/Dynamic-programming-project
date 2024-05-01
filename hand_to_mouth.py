@@ -16,6 +16,9 @@ def value_function_employment(par, c, t):
          ref_diffs[i] = par.delta**(i+1) * (consumption_utility(c) - consumption_utility(r[i]))
 
     V = consumption_utility(c)/(1-par.delta)  + par.eta * np.sum(ref_diffs)
+    print(t)
+    print(V)
+    print(r)
 
     return V
 
