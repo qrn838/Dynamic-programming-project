@@ -22,7 +22,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.N = 15 #Number of reference periods
 		# Transfers Structure
 		par.T1 = 10   #Time with high transfers
-		par.T2 = 10   #Time with medium transfers   R: Saa altsaa foer front loading eller hvad?
+		par.T2 = 10   #Time with medium transfers   R: Saa altsaa foer front loading eller hvad? S: Det gør det bare muligt at lave både front loading
 		par.T3 = par.N+1 #Time with low transfers
 		par.T = par.T1 + par.T2 + par.T3 #Total number of periods
 		
@@ -69,7 +69,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.r_u = np.zeros(par.T)						# Reference point given by last N periods income (page 1980 in DellaVigna)
 		# R: Jeg er ikke helt sikker på, hvad de næste 3 er?
 		par.ref_income_u = np.zeros(par.T+par.N)		# Stores the income history of unemployed individuals. 
-		par.ref_income_u[0:par.N] = par.w				# Some buffer zone?
+		par.ref_income_u[0:par.N] = par.w				# Some buffer zone? S: I første periode af arbejdsløshed er referencepointet givet ved lønnen
 		par.ref_income_u[par.N:] = par.income_u			# Stores actual income levels for unemployed individuals
 		
 		for t in range(par.T):
