@@ -16,6 +16,26 @@ def utility(par,c,r):
 
     return u
 
+def marginal_utility(par,c,r):
+    """ marginal utility function """
+    if c>=r:
+       mu = 1/c * (1+par.eta)
+    else:
+       mu = 1/c * (1+par.eta*par.sigma)
+
+    return mu
+
+def inv_marg_utility_1(par,c):
+    """ inverse marginal utility function """
+    inv_mu = c/(1+par.eta)
+    return inv_mu
+
+def inv_marg_utility_2(par,c):
+    """ inverse marginal utility function """
+    inv_mu = c/(1+par.eta*par.sigma)
+    return inv_mu
+  
+
 def cost(s):
 	""" cost function """
 	return 5*s**2

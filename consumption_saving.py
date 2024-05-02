@@ -11,31 +11,86 @@ def value_function_employment(par):
     """Value function when employed"""
     V_e = np.zeros((par.T, par.N+par.M, par.Na))
     V_e_next = np.zeros((par.T, par.N+par.M, par.Na))   # M to ensure that we have converged to stationary state. Check this is the case
+    a_next = np.zeros((par.T, par.N+par.M, par.Na))
 
     for i_t in range(par.T): 
         for i_n in range(par.N+par.M-1, -1, -1):
             for i_a in range(par.Na):
-                if i_n == par.N+par.M - 1:
+
+                if i_n == par.N+par.M - 1:  # Stationary state
                     V_e[i_t, i_n, i_a] = consumption_utility(par.w) / (1 - par.delta)  ## stationary state
-                elif i_n == par.N+par.M - 2:
+                    
+                elif i_n == par.N+par.M - 2: # Last period before stationary state. Repay remaining debt
                     r = par.r_e_m[i_t, i_t + i_n]
                     c = par.a_grid[i_a] + par.w
                     V_e[i_t, i_n, i_a] = utility(par, c, r) + par.delta * V_e_next[i_t, i_n+1, i_a]
-                else:
-                    def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
+                    a_next[i_t, i_n, i_a] = 0.0
+
+                else: # Cosumption saving problem
+                    if par.euler == False:  # With optimizer
+                        def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
+                            r = par.r_e_m[i_t, i_t + i_n]
+                            c = par.a_grid[i_a] + par.w - a_next / (par.R)
+                            V_e_next_interp = interp1d(par.a_grid, V_e_next)
+                            V_e = utility(par, c, r) + par.delta * V_e_next_interp(a_next)
+                            return -V_e
+
+                        a_next_guess = par.a_grid[i_a]
+                        result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]),
+                                        bounds=[(par.L, par.A_0)])
+                        a_next[i_t, i_n, i_a] = result.x[0]
+                        V_e[i_t, i_n, i_a] = -result.fun
+
+                    elif par.euler == True:  # Using euler equation. Figure out how to do this
+                    
                         r = par.r_e_m[i_t, i_t + i_n]
-                        c = par.a_grid[i_a] + par.w - a_next / (par.R)
-                        V_e_next_interp = interp1d(par.a_grid, V_e_next)
-                        V_e = utility(par, c, r) + par.delta * V_e_next_interp(a_next)
-                        return -V_e
+                        r_next = par.r_e_m[i_t, i_t + i_n + 1]
+                        c_next = par.a_grid[i_a] + par.w - a_next[i_t, i_n+1, i_a] / (par.R)
+                        
+           
+                        print(r_next)
+                        print(c_next)
 
-                    a_next_guess = par.a_grid[i_a]
-                    result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]),
-                                      bounds=[(par.L, par.A_0)])
-                    a_next = result.x[0]
-                    V_e[i_t, i_n, i_a] = -result.fun
+                        x = par.delta*par.R*marginal_utility(par,c_next,r_next)  # Use euler here to get consumption given next period. Is this done right??
+                        c1 = inv_marg_utility_1(par,x)
+                        c2 = inv_marg_utility_2(par,x)
+                        
+                        if c1 >= r and c2 >= r: # If both are above are use euler where c>=r
+                            c = c1
+                            a_next[i_t, i_n, i_a] = (par.a_grid[i_a] + par.w - c) * (par.R)
+                            
+                            if a_next[i_t, i_n, i_a]<par.L:  #Enforce borrowing constraint. Is this done right?
+                                a_next[i_t, i_n, i_a] = par.L
+                                c = par.a_grid[i_a] + par.w - a_next[i_t, i_n, i_a] / (par.R)
+                            V_e_next_interp = interp1d(par.a_grid,  V_e_next[i_t, i_n+1, :])
+                            V_e[i_t, i_n, i_a] = utility(par, c, r) + par.delta *V_e_next_interp(a_next[i_t, i_n, i_a]) 
+                            
+                        elif c1 < r and c2 < r: # If both are below r use euler where c<r
+                            c = c2
+                            a_next[i_t, i_n, i_a] = (par.a_grid[i_a] + par.w - c) * (par.R)
+                            if a_next[i_t, i_n, i_a]<par.L:  #Enforce borrowing constraint. Is this done right?
+                                a_next[i_t, i_n, i_a] = par.L
+                                c = par.a_grid[i_a] + par.w - a_next[i_t, i_n, i_a] / (par.R)
+                            V_e_next_interp = interp1d(par.a_grid,  V_e_next[i_t, i_n+1, :])
+                            V_e[i_t, i_n, i_a] = utility(par, c, r) + par.delta *V_e_next_interp(a_next[i_t, i_n, i_a]) 
+                
+                        else:  # If one is above and one is below r use numerical optimizer
+                            def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
+                                r = par.r_e_m[i_t, i_t + i_n]
+                                c = par.a_grid[i_a] + par.w - a_next / (par.R)
+                                V_e_next_interp = interp1d(par.a_grid,  V_e_next)
+                                V_e = utility(par, c, r) + par.delta * V_e_next_interp(a_next)
+                                return -V_e
 
+                            a_next_guess = par.a_grid[i_a]
+                            result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]),
+                                            bounds=[(par.L, par.A_0)])
+                            a_next[i_t, i_n, i_a] = result.x[0]
+                            V_e[i_t, i_n, i_a] = -result.fun
+                            
+     
                 V_e_next[i_t, i_n, i_a] = V_e[i_t, i_n, i_a]
+                
         
     par.V_e_t_a = V_e[:, 0, :]
 
@@ -113,4 +168,6 @@ def solve_search_and_consumption(par):
 
     return s, c, V_u
 
+
+### Solve forward from initial assets to get true search and consumption path ###
    

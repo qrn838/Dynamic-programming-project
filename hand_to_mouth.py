@@ -13,7 +13,8 @@ def value_function_employment(par, c, t):
     
     ref_diffs = np.zeros(par.N)
     for i in range(par.N):
-         ref_diffs[i] = par.delta**(i+1) * (consumption_utility(c) - consumption_utility(r[i]))
+         print(i+1)
+         ref_diffs[i] = par.delta**(i) * (consumption_utility(c) - consumption_utility(r[i]))  #i or i+1?
 
     V = consumption_utility(c)/(1-par.delta)  + par.eta * np.sum(ref_diffs)
     print(t)
@@ -101,19 +102,14 @@ def solve_search_effort(par):
             V_u[t]=unemployed_ss(par)[1]
         
         else:
-            def objective_function(s, par,t,V_u_next):
-                V_e = value_function_employment(par, par.w, t)
-                income = par.income_u[t]
-                r = par.r_u[t]
-                V_u = (utility(par,income,r) - cost(s) + par.delta * (s * V_e+(1-s)*V_u_next))
-                return -V_u
-            
-            s_initial_guess = s[t+1]
-            # Perform optimization
-            result = minimize(objective_function, s_initial_guess, args=(par,t,V_u_next), bounds=[(0, 1)])
-            # Extract optimal s
-            s[t] = result.x[0]
-            V_u[t] = -result.fun
+            V_e_next = value_function_employment(par, par.w, t+1)
+            income = par.income_u[t]
+            r = par.r_u[t]
+            x = par.delta*(V_e_next-V_u_next)
+
+            s[t] = inv_marg_cost(x)
+            V_u[t] = utility(par,income,r) - cost(s[t]) + par.delta * (s[t] * V_e_next+(1-s[t])*V_u_next)
+           
         
         V_u_next = V_u[t]
         

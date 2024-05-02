@@ -18,6 +18,7 @@ class ReferenceDependenceClass(EconModelClass):
 		""" choose parameters """
 		par = self.par
 		# a. model
+		par.euler = False  # Euler equation or optimizer
   		
 		par.N = 15 #Number of reference periods
 		par.M = 20 #Number of ekstra periods to reach stationary state
@@ -41,7 +42,7 @@ class ReferenceDependenceClass(EconModelClass):
 		#Savings
 		par.R = 1/par.delta -0.05  #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -0.0  # borrowing constraint
+		par.L = -0.5  # borrowing constraint
 		par.Na = 20  #Number of grid points for savings
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 	
