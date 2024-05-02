@@ -20,7 +20,7 @@ def value_function_employment(par):
                 if i_n == par.N+par.M - 1:  # Stationary state
                     V_e[i_t, i_n, i_a] = consumption_utility(par.w) / (1 - par.delta)  ## stationary state
                     
-                elif i_n == par.N+par.M - 2: # Last period before stationary state. Repay remaining debt
+                elif i_n == par.N+par.M - 2: # Last period before stationary state. Repay remaining debt. Remaing debt should be zero or very close in this period. Chech it is the case wheb solving forward
                     r = par.r_e_m[i_t, i_t + i_n]
                     c = par.a_grid[i_a] + par.w
                     V_e[i_t, i_n, i_a] = utility(par, c, r) + par.delta * V_e_next[i_t, i_n+1, i_a]
@@ -114,7 +114,7 @@ def solve_search_and_consumption(par):
     # b. solve
     for t in range(par.T - 1, -1, -1):
         for i_a in range(par.Na):
-            if t == par.T - 1:
+            if t == par.T - 1:   # Stationary state
                 def objective_function(s, par):
                     V_e = par.V_e_t_a[par.T - 1,0]
                     c = par.b3+(par.R-1)*par.L
@@ -133,7 +133,7 @@ def solve_search_and_consumption(par):
                 else:
                     print("Optimization failed at t={}, i_a={}".format(t, i_a))
             
-            else:
+            else: # Previous periods. Chech that debt converges to par.L before stationary state when solving forward
                 def objective_function(a_next, par,t,V_u_next):
                     income = par.income_u[t]
                     r = par.r_u[t]
