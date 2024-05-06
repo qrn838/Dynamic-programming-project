@@ -11,22 +11,24 @@ class ReferenceDependenceClass(EconModelClass):
 	def settings(self):
 		""" basic settings """
 		
-		self.namespaces = ['par'] # must be numba-able
+		self.namespaces = ['par', 'sol','sim'] # must be numba-able
 		#self.other_attrs = [] 
 
 	def setup(self):
 		""" choose parameters """
 		par = self.par
+		sol = self.sol
+		sim = self.sim
 		# a. model
 		par.euler = False  # Euler equation or optimizer
   		
-		par.N = 15 #Number of reference periods
-		par.M = 20 #Number of ekstra periods to reach stationary state
+		par.N = 10 #Number of reference periods
+		par.M = 10 #Number of ekstra periods to reach stationary state
 		# Transfers Structure
 		par.T1 = 10   #Time with high transfers
 		par.T2 = 10   #Time with medium transfers
 		par.T3 = par.N+1 #Time with low transfers
-		par.T = par.T1 + par.T2 + par.T3 #Total number of periods
+		par.T = par.T1 + par.T2 + par.T3 + par.M #Total number of periods
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
@@ -36,14 +38,14 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# Preferences
 		par.eta = 1.0  ### Reference dependence parameter
-		par.sigma = 1.5  ### Lambda in the paper
-		par.delta = 0.9  ### Discount factor
+		par.sigma = 2.0  ### Lambda in the paper
+		par.delta = 0.8  ### Discount factor
 
 		#Savings
-		par.R = 1/par.delta -0.05  #Interest rate
+		par.R = 1/par.delta  #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -0.5  # borrowing constraint
-		par.Na = 20  #Number of grid points for savings
+		par.L = -0.65  # borrowing constraint
+		par.Na = 100  #Number of grid points for savings
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 	
 
@@ -52,6 +54,13 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nstates_dynamic = 2 # number of dynamic states (Employed/Unemployed)
 		par.Nstates_dynamic_pd = 2 # number of dynamic post-decision states (Employed/Unemployed)
 		par.Nactions = 1 # number of actions (Search effort)
+
+
+		sol.s = np.zeros((par.T, par.Na))  # Policy function search effort
+		sol.a_next = np.zeros((par.T, par.Na))  # Policy function savings
+
+		sim.s = np.zeros(par.T)  # Search effort
+		sim.a = np.zeros(par.T)  # Savings
 	
 		
 
@@ -108,6 +117,7 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# Container for value functions
 		par.V_e_t_a = np.zeros((par.T, par.Na))
+		par.V_e = np.zeros((par.T, par.N+par.M, par.Na))	
 
 
 		# b. states
