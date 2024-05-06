@@ -45,7 +45,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.R = 1/par.delta  #Interest rate
 		par.A_0 = 0.0  #Initial assets 
 		par.L = -0.9  # borrowing constraint
-		par.Na = 100  #Number of grid points for savings
+		par.Na = 20  #Number of grid points for savings
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 	
 

@@ -71,7 +71,7 @@ def value_function_employment(par, sol):
 
 def unemployment_ss(par, t, i_a):
     V_e = par.V_e_t_a[t, i_a]
-    c = par.income_u[t]+(par.R-1)*par.a_grid[i_a]
+    c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
     r = par.r_u[t]
 
     # Define the function for which we want to find the root
@@ -108,6 +108,8 @@ def solve_search_and_consumption(par, sol):
                 V_u[t,i_a] = unemployment_ss(par,t, i_a)[0]
                 s[t,i_a] = unemployment_ss(par, t, i_a)[1]
                 a_next[t,i_a] = par.a_grid[i_a]
+                if i_a == 0:
+                    #print("t={}, i_a ={}, V_u={}, s={}, c={}, r={}".format(t, i_a, V_u[t,i_a], s[t,i_a], c[t,i_a], par.r_u[t]))
                     
             
             else: # Previous periods. Chech that debt converges to par.L before stationary state when solving forward
@@ -121,12 +123,12 @@ def solve_search_and_consumption(par, sol):
                     V_u_next_interp = interp1d(par.a_grid, V_u_next)
                     V_u_next = V_u_next_interp(a_next)
                     s = inv_marg_cost(par.delta*(V_e_next-V_u_next))
-                    V_u = (utility(par,c,r) - cost(s) + par.delta * (s * V_e_next+(1-s)*V_u_next))
+                    V_u = utility(par,c,r) - cost(s) + par.delta * (s * V_e_next+(1-s)*V_u_next)
                     return -V_u
                 
                 a_next_guess = par.a_grid[i_a]
-                if a_next_guess == 0:
-                    a_next_guess = -0.05 
+                # if a_next_guess == 0:
+                #     a_next_guess = -0.05 
 
                 lower_bound = par.L
                 upper_bound = (par.a_grid[i_a] + par.income_u[t])*par.R - 10e-6
@@ -137,15 +139,17 @@ def solve_search_and_consumption(par, sol):
                 if result.success:
                                       
                     a_next[t, i_a] = result.x[0]
-                    V_u[t, i_a] = -result.fun
+                    V_u[t,i_a] = -result.fun
+                    
                     V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[t+1, :])
                     V_e_next = V_e_next_interp(a_next[t,i_a])
                     V_u_next_interp = interp1d(par.a_grid, V_u_next[t+1,:])
                     V_u_next_int = V_u_next_interp(a_next[t, i_a])
                     s[t,i_a] = inv_marg_cost(par.delta*(V_e_next-V_u_next_int))
                     c[t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[t,i_a] / (par.R)
+                    #V_u[t,i_a] = utility(par,c[t,i_a],par.r_u[t]) - cost(s[t,i_a]) + par.delta * (s[t,i_a] * V_e_next + (1-s[t,i_a])*V_u_next_int)
                     if i_a == 0:
-                        print("t={}, i_a ={}, V_u_next={}, V_e_next={}, V_u={}, s={}, c={}, r={}".format(t, i_a, V_u_next_int, V_e_next, V_u[t,i_a], s[t,i_a], c[t,i_a], par.r_u[t]))
+                        #print("t={}, i_a ={}, V_u_next={}, V_e_next={}, V_u={}, s={}, c={}, r={}, a_next={}".format(t, i_a, V_u_next_int, V_e_next, V_u[t,i_a], s[t,i_a], c[t,i_a], par.r_u[t], a_next[t,i_a]))
                 else:
                     print("Error at t={}, i_a={}".format(t, i_a))
 
