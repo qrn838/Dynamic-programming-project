@@ -44,7 +44,7 @@ class ReferenceDependenceClass(EconModelClass):
 		#Savings
 		par.R = 1/par.delta  #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -0.65  # borrowing constraint
+		par.L = -0.9  # borrowing constraint
 		par.Na = 100  #Number of grid points for savings
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 	
@@ -59,8 +59,11 @@ class ReferenceDependenceClass(EconModelClass):
 		sol.s = np.zeros((par.T, par.Na))  # Policy function search effort
 		sol.a_next = np.zeros((par.T, par.Na))  # Policy function savings
 
+		sol.a_next_e = np.zeros((par.T, par.N+par.M, par.Na))  # Policy function savings employed
+
 		sim.s = np.zeros(par.T)  # Search effort
 		sim.a = np.zeros(par.T)  # Savings
+		sim.a_e = np.zeros((par.T,par.N+par.M+1))
 	
 		
 
