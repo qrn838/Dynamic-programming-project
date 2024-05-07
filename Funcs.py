@@ -27,12 +27,12 @@ def marginal_utility(par,c,r):
 
 def inv_marg_utility_1(par,c):
     """ inverse marginal utility function """
-    inv_mu = c/(1+par.eta)
+    inv_mu = 1/c * (1+par.eta)
     return inv_mu
 
 def inv_marg_utility_2(par,c):
     """ inverse marginal utility function """
-    inv_mu = c/(1+par.eta*par.sigma)
+    inv_mu = 1/c * (1+par.eta*par.sigma)
     return inv_mu
   
 

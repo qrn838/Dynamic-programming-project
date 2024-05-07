@@ -20,7 +20,7 @@ class ReferenceDependenceClass(EconModelClass):
 		sol = self.sol
 		sim = self.sim
 		# a. model
-		par.euler = False  # Euler equation or optimizer
+		par.euler = True  # Euler equation or optimizer
   		
 		par.N = 10 #Number of reference periods
 		par.M = 10 #Number of ekstra periods to reach stationary state

@@ -23,6 +23,8 @@ def value_function_employment(par, sol):
     V_e = np.zeros((par.T, par.N+par.M, par.Na))
     V_e_next = np.zeros((par.T, par.N+par.M, par.Na))   # M to ensure that we have converged to stationary state. Check this is the case
     a_next = np.zeros((par.T, par.N+par.M, par.Na))
+    m_egm = np.zeros((par.T, par.N+par.M, par.Na))
+    c_egm = np.zeros((par.T, par.N+par.M, par.Na))
 
     for i_t in range(par.T): 
         for i_n in range(par.N+par.M-1, -1, -1):
@@ -31,17 +33,16 @@ def value_function_employment(par, sol):
 
                 if i_n == par.N+par.M - 1:  # Stationary state
                     r = par.r_e_m[i_t, i_t + i_n]
-                    c = par.w + par.a_grid[i_a]*(par.R-1)
+                    c = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
                     V_e[i_t, i_n, i_a] = utility(par, c, r) / (1 - par.delta)  ## stationary state
                     a_next[i_t, i_n, i_a] = par.a_grid[i_a]
-                    
-                # elif i_n == par.N+par.M - 2: # Last period before stationary state. Repay remaining debt. Remaing debt should be zero or very close in this period. Chech it is the case wheb solving forward
-                #     r = par.r_e_m[i_t, i_t + i_n]
-                #     c = par.a_grid[i_a] + par.w
-                #     V_e[i_t, i_n, i_a] = utility(par, c, r) + par.delta * V_e_next[i_t, i_n+1, i_a]  
-                #     a_next[i_t, i_n, i_a] = 0.0
+
+                    m_egm[i_t, i_n, :] = par.a_grid[:] + par.w
+                    c_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
+
 
                 else: # Cosumption saving problem
+
                     if par.euler == False:  # With optimizer
                         a_next_guess = a_next[i_t, i_n+1, i_a]
                         lower_bound = par.L
@@ -51,10 +52,114 @@ def value_function_employment(par, sol):
                         if result.success:
                             a_next[i_t, i_n, i_a] = result.x[0]
                             V_e[i_t, i_n, i_a] = -result.fun
-                            if c <= 0:
-                                print("Error: Consumption is negative at t={}, i_n={}, i_a={}".format(i_t, i_n, i_a))
+                            
                         else:
                             print("Error at t={}, i_n={}, i_a={}".format(i_t, i_n, i_a))
+                    
+                    elif par.euler == True:  # EGM
+                        # a_grid is now seen as next period assets
+                        print("t,n")
+                        print(i_t,i_n)
+                        m = par.a_grid[:] + par.w
+                        c_next_int = interp1d(m,c_egm[i_t,i_n+1,:])
+                        c_next = c_next_int(m_egm[i_t,i_n+1,i_a])
+                        print("c_next")
+                        print(c_next)
+
+                        marg_util_next = par.delta * par.R * marginal_utility(par, c_next, par.r_e_m[i_t, i_t + i_n+1])
+                        c1 = inv_marg_utility_1(par, marg_util_next)
+                        c2 = inv_marg_utility_2(par, marg_util_next)
+
+                        m1 = par.a_grid[i_a]/par.R + c1
+                        m2 = par.a_grid[i_a]/par.R + c2
+
+                        # How ro handle constraints
+                        
+                        # if m1 < par.a_grid[0] + par.w:
+                        #     c1 = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
+                        #     m1 = par.a_grid[i_a]/par.R + c1
+                        
+                        # if m2 < par.a_grid[0] + par.w:
+                        #     c2 = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
+                        #     m2 = par.a_grid[i_a]/par.R + c2
+                        # if m2 > par.A_0+par.w:
+                        #     c2 = par.A_0 + par.w - par.A_0 / (par.R)
+                        #     m2 = par.A_0/par.R + c2
+                        
+                        #Figure out how to interp to common grid
+                        a1 = interp1d(m, par.a_grid, fill_value="extrapolate")(m1)
+                        a2 = interp1d(m, par.a_grid, fill_value="extrapolate")(m2)
+                        print("par.a_grid, a1")
+                        print(par.a_grid[i_a], a1)
+                  
+                        if c1 >= par.r_e_m[i_t, i_t + i_n] and c2 >= par.r_e_m[i_t, i_t + i_n]:
+                            c_egm[i_t, i_n, i_a] = c1
+                            m_egm[i_t, i_n, i_a] = par.a_grid[i_a]/par.R + c1
+                            if m_egm[i_t, i_n, i_a] < par.a_grid[0] + par.w:
+                                print("Error at t={}, i_n={}, i_a={}".format(i_t, i_n, i_a))
+                                c_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
+                                m_egm[i_t, i_n, i_a] = par.a_grid[i_a]/par.R + c_egm[i_t, i_n, i_a]
+                            print("c_egm 1")
+                            print(c_egm[i_t, i_n, i_a])
+                            print("m_egm")
+                            print(m_egm[i_t, i_n, i_a])
+                            # Interp to normal grid
+                            a_next[i_t, i_n, i_a] = interp1d(m, par.a_grid)(m_egm[i_t, i_n, i_a])
+                            print("a_next")
+                            print(a_next[i_t, i_n, i_a])
+                        elif c1 <= par.r_e_m[i_t, i_t + i_n] and c2 <= par.r_e_m[i_t, i_t + i_n]:
+                            c_egm[i_t, i_n, i_a] = c2
+                            m_egm[i_t, i_n, i_a] = par.a_grid[i_a]/par.R + c2
+                            if m_egm[i_t, i_n, i_a] < par.a_grid[0] + par.w:
+                                print("Error at t={}, i_n={}, i_a={}".format(i_t, i_n, i_a))
+                                c_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
+                                m_egm[i_t, i_n, i_a] = par.a_grid[i_a]/par.R + c_egm[i_t, i_n, i_a]
+                            print("c_egm 2")
+                            print(c_egm[i_t, i_n, i_a])
+                            print("m_egm")
+                            print(m_egm[i_t, i_n, i_a])
+                            # Interp to normal grid
+                            a_next[i_t, i_n, i_a] = interp1d(m, par.a_grid)(m_egm[i_t, i_n, i_a])
+                            print("a_next")
+                            print(a_next[i_t, i_n, i_a])
+                        
+                        else:
+                            V_e_1 = utility(par, c1, par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid,V_e_next[i_t, i_n+1, :], fill_value="extrapolate")(a1)
+
+                            V_e_2 = utility(par, c2, par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid,V_e_next[i_t, i_n+1, :], fill_value="extrapolate")(a2)
+
+                            if V_e_1 > V_e_2:
+                                c_egm[i_t, i_n, i_a] = c1
+                                m_egm[i_t, i_n, i_a] = m1
+                                a_next[i_t, i_n, i_a] = a1
+                            else:
+                                c_egm[i_t, i_n, i_a] = c2   
+                                m_egm[i_t, i_n, i_a] = m2
+                                a_next[i_t, i_n, i_a] = a2                            
+
+                            # print("Optimizer")
+                            # a_next_guess = a_next[i_t, i_n+1, i_a]
+                            # lower_bound = par.L
+                            # upper_bound = (par.a_grid[i_a] + par.w)*par.R - 10e-6
+                            # upper_bound = min(upper_bound, par.A_0)
+                            # result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]), method='SLSQP', bounds=[(lower_bound, upper_bound)])
+                            # if result.success:
+                            #     a_next[i_t, i_n, i_a] = result.x[0]
+                            #     c_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - a_next[i_t, i_n, i_a] / (par.R)
+                            #     m_egm[i_t, i_n, i_a] = par.a_grid[i_a]/par.R + c_egm[i_t, i_n, i_a]
+                               
+                            #     if m_egm[i_t, i_n, i_a] < par.a_grid[0] + par.w:
+                            #         c_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
+                            #         m_egm[i_t, i_n, i_a] = par.a_grid[i_a]/par.R + c_egm[i_t, i_n, i_a]
+                            #         a_next[i_t, i_n, i_a] = interp1d(m, par.a_grid)(m_egm[i_t, i_n, i_a])
+                                                                
+                            # else:
+                            #     print("Error at t={}, i_n={}, i_a={}".format(i_t, i_n, i_a))
+
+                        V_e[i_t, i_n, i_a] = utility(par, c_egm[i_t, i_n, i_a], par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid,V_e_next[i_t, i_n+1, :])(a_next[i_t, i_n, i_a])
+
+                        
+                                    
 
                 V_e_next[i_t, i_n, i_a] = V_e[i_t, i_n, i_a]
                 
@@ -108,8 +213,8 @@ def solve_search_and_consumption(par, sol):
                 V_u[t,i_a] = unemployment_ss(par,t, i_a)[0]
                 s[t,i_a] = unemployment_ss(par, t, i_a)[1]
                 a_next[t,i_a] = par.a_grid[i_a]
-                if i_a == 0:
-                    #print("t={}, i_a ={}, V_u={}, s={}, c={}, r={}".format(t, i_a, V_u[t,i_a], s[t,i_a], c[t,i_a], par.r_u[t]))
+                # if i_a == 0:
+                #     print("t={}, i_a ={}, V_u={}, s={}, c={}, r={}".format(t, i_a, V_u[t,i_a], s[t,i_a], c[t,i_a], par.r_u[t]))
                     
             
             else: # Previous periods. Chech that debt converges to par.L before stationary state when solving forward
@@ -148,8 +253,8 @@ def solve_search_and_consumption(par, sol):
                     s[t,i_a] = inv_marg_cost(par.delta*(V_e_next-V_u_next_int))
                     c[t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[t,i_a] / (par.R)
                     #V_u[t,i_a] = utility(par,c[t,i_a],par.r_u[t]) - cost(s[t,i_a]) + par.delta * (s[t,i_a] * V_e_next + (1-s[t,i_a])*V_u_next_int)
-                    if i_a == 0:
-                        #print("t={}, i_a ={}, V_u_next={}, V_e_next={}, V_u={}, s={}, c={}, r={}, a_next={}".format(t, i_a, V_u_next_int, V_e_next, V_u[t,i_a], s[t,i_a], c[t,i_a], par.r_u[t], a_next[t,i_a]))
+                    # if i_a == 0:
+                    #     print("t={}, i_a ={}, V_u_next={}, V_e_next={}, V_u={}, s={}, c={}, r={}, a_next={}".format(t, i_a, V_u_next_int, V_e_next, V_u[t,i_a], s[t,i_a], c[t,i_a], par.r_u[t], a_next[t,i_a]))
                 else:
                     print("Error at t={}, i_a={}".format(t, i_a))
 
@@ -205,7 +310,6 @@ def solve_forward_employment(par, sol, sim):
 
                 elif n == 1:
                     a = sim.a_next[t-1]
-                    print(a)
                     a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :])
                     a_next[t, n] = a_next_interp(a)
                 else:
