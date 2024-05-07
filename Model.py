@@ -29,6 +29,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par.T2 = 10   #Time with medium transfers
 		par.T3 = par.N+1 #Time with low transfers
 		par.T = par.T1 + par.T2 + par.T3 + par.M #Total number of periods
+
+		par.Na = 50  #Number of grid points for savings
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
@@ -45,8 +47,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par.R = 1/par.delta  #Interest rate
 		par.A_0 = 0.0  #Initial assets 
 		par.L = -0.9  # borrowing constraint
-		par.Na = 20  #Number of grid points for savings
-		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
+		
+		
 	
 
 		par.Nstates_fixed = 0 # number of fixed states
@@ -73,6 +75,8 @@ class ReferenceDependenceClass(EconModelClass):
 		# a. unpack
 		par = self.par
 		
+		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
+
         #Income when unemployed
 		par.income_u = np.zeros(par.T) 
 		par.income_u[0:par.T1] = par.b1
