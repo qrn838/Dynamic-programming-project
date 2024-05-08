@@ -2,6 +2,9 @@ from types import SimpleNamespace
 import numpy as np
 import scipy
 from copy import deepcopy
+from scipy.io import loadmat
+
+from hand_to_mouth import *
 
 from EconModel import EconModelClass
 
@@ -11,22 +14,43 @@ class ReferenceDependenceClass(EconModelClass):
 	def settings(self):
 		""" basic settings """
 		
-		self.namespaces = ['par'] 
+		self.namespaces = ['par', 'data'] 
 		#self.other_attrs = [] 
 
 	def setup(self):
 		""" choose parameters """
 		par = self.par
-		# a. model
+		data = self.data
+		# Data
+		# get the data
+		data.data = loadmat('Data\Moments_hazard.mat')
 
-		
-  		
+		# Access the 'Moments' table
+		data.moments = data.data['Moments']
+		# Determine the number of elements in moments_table
+		data.num_elements = data.moments.shape[0]
+
+		# Calculate the number of elements to include in moments_before
+		data.num_elements_before = data.num_elements // 2
+		# Create moments_before containing exactly half the elements in moments_table
+		data.moments_before = data.moments[:data.num_elements_before]
+		data.moments_after = data.moments[data.num_elements_before:]
+
+		# Access the 'VCcontrols' table
+		data.vc_controls = data.data['VCcontrol']
+		data.vc_controls_before = data.vc_controls[:data.num_elements_before, :data.num_elements_before]
+		data.vc_controls_after = data.vc_controls[data.num_elements_before:, data.num_elements_before:]
+				
+
+
+		# model
+
 		par.N = 15 #Number of reference periods
 		# Transfers Structure
 		par.T1 = 10   #Time with high transfers
 		par.T2 = 10   #Time with medium transfers   R: Saa altsaa foer front loading eller hvad? S: Det gør det bare muligt at lave både front loading
 		par.T3 = par.N+1 #Time with low transfers
-		par.T = par.T1 + par.T2 + par.T3 #Total number of periods
+		par.T =  data.num_elements_before  #par.T1 + par.T2 + par.T3 #Total number of periods
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
@@ -51,6 +75,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.types = 3
 
 		par.type_shares = np.array([0.4,0.4,0.2])
+
 		
 		
 
@@ -107,4 +132,9 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nstates_t = par.T 		# number of auxiliary states
 		par.Nstates_pd_t = par.T 	# number of auxiliary post-decision states
 		
+
+	def solve(self):
+		sim_s = sim_search_effort(self.par)
+		return sim_s
+
 
