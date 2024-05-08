@@ -18,6 +18,8 @@ class ReferenceDependenceClass(EconModelClass):
 		""" choose parameters """
 		par = self.par
 		# a. model
+
+		
   		
 		par.N = 15 #Number of reference periods
 		# Transfers Structure
@@ -34,7 +36,7 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# Preferences
 		par.eta = 1.0	 # Captures reference point
-		par.sigma = 5  # Lambda in the paper, i.e. loss aversion
+		par.sigma = 2.0  # Lambda in the paper, i.e. loss aversion
 		par.delta = 0.9  # Discount factor
 	
 
@@ -44,6 +46,12 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nstates_dynamic_pd = 2 # number of dynamic post-decision states (Employed/Unemployed)
 		par.Nactions = 1 # number of actions (Search effort)
 	
+		par.cost = np.array([5.0,7.0,10.0])
+		par.gamma = 1.0
+		par.types = 3
+
+		par.type_shares = np.array([0.4,0.4,0.2])
+		
 		
 
 	def allocate(self):

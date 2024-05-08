@@ -22,17 +22,16 @@ def value_function_employment(par, c, t):
 
 ### Search effort and value function in steady state ###
 
-def unemployed_ss(par):
-    def objective_function(s, par):
+def unemployed_ss(par,i):
+
+    def objective_function(s, par, i):
         V_e = value_function_employment(par, par.w, par.T - 1)
-        V_u = (consumption_utility(par.b3) - cost(s) + par.delta * (s * V_e)) / (1-par.delta*(1-s))
+        V_u = (consumption_utility(par.b3) - cost(par,s)[i] + par.delta * (s * V_e)) / (1-par.delta*(1-s))
         return -V_u  # Minimize the negative of V_u to maximize V_u
 
-    # Initial guess for s
-    s_initial_guess = 0.8
-
     # Perform optimization
-    result = minimize(objective_function, s_initial_guess, args=(par,), bounds=[(0, 1)])
+    s_initial_guess = 0.8
+    result = minimize(objective_function, s_initial_guess, args=(par,i,), bounds=[(0, 1)])
 
     # Extract optimal s
     optimal_s_ss = result.x[0]
@@ -41,65 +40,51 @@ def unemployed_ss(par):
     return optimal_s_ss, V_u_ss
 
 
-# ### Backward Induction to solve search effort in all periods of unemployment ###
-
-# def solve_search_effort(par):
-#     # a. allocate
-#     s = np.zeros(par.T)
-#     V_u = np.zeros(par.T)
-
-#     # b. solve
-#     for t in range(par.T - 1, -1, -1):
-#         if t == par.T - 1:
-#             s[t], V_u[t] = unemployed_ss(par)
-        
-#         else:
-#             def objective_function(s, par,t,V_u_next):
-#                 V_e = value_function_employment(par, par.w, t+1)
-#                 income = par.income_u[t]
-#                 r = par.r_u[t]
-#                 V_u = (utility(par,income,r) - cost(s) + par.delta * (s * V_e+(1-s)*V_u_next))
-#                 return -V_u
-            
-#             s_initial_guess = s[t+1]
-#             # Perform optimization
-#             result = minimize(objective_function, s_initial_guess, args=(par,t,V_u_next), bounds=[(0, 1)])
-#             # Extract optimal s
-#             s[t] = result.x[0]
-#             V_u[t] = -result.fun
-        
-#         V_u_next = V_u[t]
-        
-
-#     return s, V_u
-
 
 ## Backward Induction to solve search effort in all periods of unemployment ###
 
 def solve_search_effort(par):
     # a. allocate
-    s = np.zeros(par.T)
-    V_u = np.zeros(par.T)
+    s = np.zeros((par.types,par.T))
+    V_u = np.zeros((par.types,par.T))
 
-    # b. solve
-    for t in range(par.T - 1, -1, -1):
-        if t == par.T - 1:
-            s[t], V_u[t] = unemployed_ss(par)
-        
+    for i in range(par.types):
+
+        # b. solve
+        for t in range(par.T - 1, -1, -1):
+            if t == par.T - 1:
+                s[i,t], V_u[i,t] = unemployed_ss(par,i)
+            
+            else:
+            
+                V_e_next = value_function_employment(par, par.w, t+1)
+                income = par.income_u[t]
+                r = par.r_u[t]
+                x = par.delta*(V_e_next-V_u[i,t+1])
+
+                s[i,t] = inv_marg_cost(par,x)[i]
+                V_u[i,t] = utility(par,income,r) - cost(par,s[i,t])[i] + par.delta * (s[i,t] * V_e_next+(1-s[i,t])*V_u[i,t+1])
+    return s
+
+def sim_search_effort(par):
+    #Get policy functions
+    s = solve_search_effort(par)
+
+    """ Simulate search effort """
+    s_sim = np.zeros((par.T))
+    for t in range(par.T):
+        if t == 0:
+            type_shares = par.type_shares
+            print(type_shares)
+            s_sim[t] = type_shares @ s[:,t]  # search effort is weighted average of search efforts of types
         else:
-           
-            V_e_next = value_function_employment(par, par.w, t+1)
-            income = par.income_u[t]
-            r = par.r_u[t]
-            x = par.delta*(V_e_next-V_u_next)
+            type_shares = type_shares*(1-s[:,t])  # update type shares as people get employed
+            type_shares = type_shares/np.sum(type_shares) # normalize
+            print(type_shares)
+            s_sim[t] = type_shares @ s[:,t]
+    
+    return s_sim
 
-            s[t] = inv_marg_cost(x)
-            V_u[t] = utility(par,income,r) - cost(s[t]) + par.delta * (s[t] * V_e_next+(1-s[t])*V_u_next)
-        
-        V_u_next = V_u[t]
-        
-
-    return s, V_u
 
 
    
