@@ -52,7 +52,7 @@ def sum_squared_diff_moments(theta,model,est_par):
 
     diff = (moments-moments_after)
    
-    res = (diff.T @ weight_mat @ diff)*1000
+    res = (diff.T @ weight_mat @ diff)*100
      
     return res
 
