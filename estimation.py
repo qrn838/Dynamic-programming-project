@@ -48,7 +48,7 @@ def sum_squared_diff_moments(theta,model,est_par):
     moments =  model.solve()   
 
     moments_after = data.moments_after
-    #moments_after = moments_after.reshape(36)
+    moments_after = moments_after.reshape(35)
 
 
     diff = (moments-moments_after)

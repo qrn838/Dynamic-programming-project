@@ -23,7 +23,7 @@ class ReferenceDependenceClass(EconModelClass):
 		data = self.data
 		# Data
 		# get the data
-		data.data = loadmat('Data/Moments_hazard_wcontrols.mat')
+		data.data = loadmat('Data/Moments_hazard.mat')
 
 		# Access the 'Moments' table
 		data.moments = data.data['Moments']
@@ -33,13 +33,13 @@ class ReferenceDependenceClass(EconModelClass):
 		# Calculate the number of elements to include in moments_before
 		data.num_elements_before = data.num_elements // 2
 		# Create moments_before containing exactly half the elements in moments_table
-		data.moments_before = data.moments[:data.num_elements_before]
-		data.moments_after = data.moments[data.num_elements_before:]
+		data.moments_before = data.moments[1:data.num_elements_before]
+		data.moments_after = data.moments[data.num_elements_before+1:]
 
 		# Access the 'VCcontrols' table
 		data.vc_controls = data.data['VCcontrol']
-		data.vc_controls_before = data.vc_controls[:data.num_elements_before, :data.num_elements_before]
-		data.vc_controls_after = data.vc_controls[data.num_elements_before:, data.num_elements_before:]
+		data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
+		data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
 				
 
 
