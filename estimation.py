@@ -22,13 +22,13 @@ def updatepar(par, parnames, parvals):
 
 
 
-def method_simulated_moments(model,est_par,theta0):
+def method_simulated_moments(model,est_par,theta0, bounds):
     # Check the parameters
     assert (len(est_par)==len(theta0)), 'Number of parameters and initial values do not match'
 
     # Estimate
     obj_fun = lambda x: sum_squared_diff_moments(x,model,est_par)
-    res = optimize.minimize(obj_fun,theta0, method='BFGS')
+    res = minimize(obj_fun,theta0, method='nelder-mead', bounds = bounds)
 
     return res
 
@@ -48,15 +48,12 @@ def sum_squared_diff_moments(theta,model,est_par):
     moments =  model.solve()   
 
     moments_after = data.moments_after
-    #moments_after = moments_after.reshape(36)
-
+    moments_after = moments_after.reshape(35)
 
     diff = (moments-moments_after)
-
-    
-    res = (diff.T @ weight_mat @ diff)
-    
-    
+   
+    res = (diff.T @ weight_mat @ diff)*1000
+     
     return res
 
     

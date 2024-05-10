@@ -33,24 +33,26 @@ class ReferenceDependenceClass(EconModelClass):
 		# Calculate the number of elements to include in moments_before
 		data.num_elements_before = data.num_elements // 2
 		# Create moments_before containing exactly half the elements in moments_table
-		data.moments_before = data.moments[:data.num_elements_before]
-		data.moments_after = data.moments[data.num_elements_before:]
+		data.moments_before = data.moments[1:data.num_elements_before]
+		data.moments_after = data.moments[data.num_elements_before+1:]
 
 		# Access the 'VCcontrols' table
 		data.vc_controls = data.data['VCcontrol']
-		data.vc_controls_before = data.vc_controls[:data.num_elements_before, :data.num_elements_before]
-		data.vc_controls_after = data.vc_controls[data.num_elements_before:, data.num_elements_before:]
+		data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
+		data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
 				
 
 
 		# model
 
 		par.N = 15 #Number of reference periods
+		par.M = 10 #Number of periods in the future to ensure convergence
 		# Transfers Structure
 		par.T1 = 6   #Time with high transfers
 		par.T2 = 12   #Time with medium transfers   R: Saa altsaa foer front loading eller hvad? S: Det gør det bare muligt at lave både front loading
-		par.T3 = par.N+1 #Time with low transfers
-		par.T =  par.T1 + par.T2 + par.T3 + 1 #Total number of periods
+		par.T3 = par.N+par.M #Time with low transfers
+		par.T =  par.T1 + par.T2 + par.T3  #Total number of periods
+		par.T_sim = 35 #Number of periods in the simulation
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
@@ -70,11 +72,15 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nstates_dynamic_pd = 2 # number of dynamic post-decision states (Employed/Unemployed)
 		par.Nactions = 1 # number of actions (Search effort)
 	
-		par.cost = np.array([107.0,310.4])
+		
+		par.cost1 = 107.0
+		par.cost2 = 310.4
 		par.gamma = 0.06
 		par.types = 2
 
-		par.type_shares = np.array([0.17,0.83])
+		
+		par.type_shares1 = 0.17
+		par.type_shares2 = 1-par.type_shares1
 
 		
 		
@@ -84,6 +90,8 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# a. unpack
 		par = self.par
+
+		par.type_shares = np.array([par.type_shares1, par.type_shares2])
 		
         #Income when unemployed
 		par.income_u = np.zeros(par.T)					# Empty array to store benefits
