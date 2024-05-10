@@ -18,6 +18,9 @@ def updatepar(par, parnames, parvals):
     for i,parval in enumerate(parvals):
         parname = parnames[i]
         setattr(par,parname,parval) # It gives the attibute parname the new value parval, within the par class
+        if parname == 'N':
+            '''If variable name is N set to integer'''
+            setattr(par,parname,int(parval))
     return par
 
 
@@ -44,11 +47,13 @@ def sum_squared_diff_moments(theta,model,est_par):
     model.allocate()
     
     # Objective function
-    weight_mat = data.vc_controls_after   
+    weight_mat = data.vc_controls_before   
     moments =  model.solve()   
 
-    moments_after = data.moments_after
+    moments_after = data.moments_before
+    # print(np.shape(moments_after))
     moments_after = moments_after.reshape(35)
+    # print(theta)
 
     diff = (moments-moments_after)
    

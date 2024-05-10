@@ -55,14 +55,16 @@ class ReferenceDependenceClass(EconModelClass):
 		par.T_sim = 35 #Number of periods in the simulation
 		
         # Income Structure
-		par.w = 1.0     #Normalize wages
-		par.b1 = 342/675*par.w    # High transfers
-		par.b2 = 171/675*par.w    # Medium transfers
-		par.b3 = 114/675*par.w    # Low transfers
+		par.w = 1.0     		    #Normalize wages
+		# par.b1 = 342/675*par.w    # High transfers
+		# par.b2 = 171/675*par.w    # Medium transfers
+		par.b3 = 114/675*par.w      # Low transfers
+		par.b1 = 223/675*par.w    
+		par.b2 = par.b1
 
 		# Preferences
-		par.eta = 1.0	 # Captures reference dependence
-		par.sigma = 2.23  # Lambda in the paper, i.e. loss aversion
+		par.eta = 1.0	   # Captures reference dependence
+		par.sigma = 2.23   # Lambda in the paper, i.e. loss aversion
 		par.delta = 0.995  # Discount factor
 	
 
@@ -91,7 +93,7 @@ class ReferenceDependenceClass(EconModelClass):
 		# a. unpack
 		par = self.par
 
-		par.type_shares = np.array([par.type_shares1, par.type_shares2])
+
 		
         #Income when unemployed
 		par.income_u = np.zeros(par.T+1)					# Empty array to store benefits
@@ -109,28 +111,28 @@ class ReferenceDependenceClass(EconModelClass):
 		# Reference points unemployed
 		par.r_u = np.zeros(par.T)						# Reference point given by last N periods income (page 1980 in DellaVigna)
 
-		par.ref_income_u = np.zeros(par.T+par.N)		# Stores the income history of unemployed individuals. 
-		par.ref_income_u[0:par.N] = par.w				# Some buffer zone? S: I første periode af arbejdsløshed er referencepointet givet ved lønnen
-		par.ref_income_u[par.N:] = par.income_u[:-1]			# Stores actual income levels for unemployed individuals
+		par.ref_income_u = np.zeros(par.T+int(par.N))		# Stores the income history of unemployed individuals. 
+		par.ref_income_u[0:int(par.N)] = par.w				# Some buffer zone? S: I første periode af arbejdsløshed er referencepointet givet ved lønnen
+		par.ref_income_u[int(par.N):] = par.income_u[:-1]			# Stores actual income levels for unemployed individuals
 		
 		for t in range(par.T):
-			par.r_u[t] = par.ref_income_u[t:t+par.N].mean()		# Calculates the reference point for unemployed individuals by taking the mean of the income over the last N periods. 
+			par.r_u[t] = par.ref_income_u[t:t+int(par.N)].mean()		# Calculates the reference point for unemployed individuals by taking the mean of the income over the last N periods. 
 	
 		# Reference points employed
 		# Notice that we now use two dimensions. This is because, we need to account for both wage when employed and the benefit level before finding a job 
-		par.r_e = np.zeros((par.T, par.T+par.N))				# reference point given by last N periods income (page 1980 in DellaVigna)
-		par.ref_income_e = np.zeros((par.T, par.T+2*par.N))		# Stores the income history of employed individuals R: Hvorfor 2 gange N?
+		par.r_e = np.zeros((par.T, par.T+int(par.N)))				# reference point given by last N periods income (page 1980 in DellaVigna)
+		par.ref_income_e = np.zeros((par.T, par.T+2*int(par.N)))		# Stores the income history of employed individuals R: Hvorfor 2 gange N?
 		for t in range(par.T):
-			par.ref_income_e[t, 0:par.N] = par.w
-			par.ref_income_e[t, par.N:par.T+par.N] = par.income_e[t, :-1]
-			par.ref_income_e[t, par.T+par.N:] = par.w
-			for s in range(par.T+par.N):
-				par.r_e[t, s] = par.ref_income_e[t, s:s+par.N].mean()
+			par.ref_income_e[t, 0:int(par.N)] = par.w
+			par.ref_income_e[t, int(par.N):par.T+int(par.N)] = par.income_e[t, :-1]
+			par.ref_income_e[t, par.T+int(par.N):] = par.w
+			for s in range(par.T+int(par.N)):
+				par.r_e[t, s] = par.ref_income_e[t, s:s+int(par.N)].mean()
 		
 		#reference point for next ten periods
-		par.r_e_future = np.zeros((par.T, par.N))
+		par.r_e_future = np.zeros((par.T, int(par.N)))
 		for t in range(par.T):
-			par.r_e_future[t, :] = par.r_e[t, t:t+par.N]
+			par.r_e_future[t, :] = par.r_e[t, t:t+int(par.N)]
 	
 
 		# b. states
