@@ -4,6 +4,7 @@ from scipy.optimize import minimize
 from scipy.optimize import minimize_scalar
 from scipy.interpolate import interp1d
 from scipy.optimize import brentq
+import scipy.optimize as optimize
 import numba
 
 from Funcs import *
@@ -46,7 +47,7 @@ def value_function_employment(par, sol):
                     if par.euler == False:  # With optimizer
                         a_next_guess = a_next[i_t, i_n+1, i_a]
                         lower_bound = par.L
-                        upper_bound = (par.a_grid[i_a] + par.w)*par.R - 10e-6
+                        upper_bound = (par.a_grid[i_a] + par.w)*par.R - 10e-6  # consumption must be positive
                         upper_bound = min(upper_bound, par.A_0)
                         result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]), method='SLSQP', bounds=[(lower_bound, upper_bound)])
                         if result.success:
@@ -73,6 +74,7 @@ def value_function_employment(par, sol):
                         a1 = interp1d(m, par.a_grid, fill_value="extrapolate")(m1)
                         a2 = interp1d(m, par.a_grid, fill_value="extrapolate")(m2)
 
+                        # if you are not spending enough...
                         if m1 < par.a_grid[0] + par.w:
                             c1 = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
                             m1 = par.a_grid[i_a]/par.R + c1
@@ -81,6 +83,9 @@ def value_function_employment(par, sol):
                             c2 = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
                             m2 = par.a_grid[i_a]/par.R + c2
                             a2 = interp1d(m, par.a_grid)(m2)
+
+                        ###  FIND OUT HOW TO HANDLE BORROWING CONSTRAINTS 
+
 
                   
                         if c1 >= par.r_e_m[i_t, i_t + i_n] and c2 >= par.r_e_m[i_t, i_t + i_n]:
@@ -117,6 +122,8 @@ def value_function_employment(par, sol):
     sol.a_next_e = a_next
 
 
+
+### USE OPTIMIZER INSTEAD OF THE ROOT FINDING STUFF ###
 def unemployment_ss(par, t, i_a):
     V_e = par.V_e_t_a[t, i_a]
     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
@@ -134,6 +141,8 @@ def unemployment_ss(par, t, i_a):
     s = inv_marg_cost(par.delta*(V_e-V_u))
 
     return V_u,s
+
+
 
 
 ### Backward Induction to solve search effort in all periods of unemployment ###
