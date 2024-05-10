@@ -96,16 +96,16 @@ class ReferenceDependenceClass(EconModelClass):
 
 		
         #Income when unemployed
-		par.income_u = np.zeros(par.T+1)					# Empty array to store benefits
+		par.income_u = np.zeros(par.T)				# Empty array to store benefits
 		par.income_u[0:par.T1] = par.b1					# Benefits in first T1 periods (high benefits)
 		par.income_u[par.T1:par.T1+par.T2] = par.b2		# Benefite in middle T2 periods (medium benefits)
 		par.income_u[par.T1+par.T2:] = par.b3			# Benefits in last T3 periods (low benefits)
 	
         #Income when employed
-		par.income_e = np.zeros((par.T, par.T+1))			# Empty array to store income
+		par.income_e = np.zeros((par.T, par.T))		# Empty array to store income
 		for t in range(par.T):
 			par.income_e[t, :] = par.income_u			# Income if unemployed
-			par.income_e[t, t+1:] = par.w					# Income after finding job SHOULD IT BE t+1: ?
+			par.income_e[t, t:] = par.w				# Income after finding job SHOULD IT BE t+1: ?
 	
 	
 		# Reference points unemployed
@@ -113,7 +113,7 @@ class ReferenceDependenceClass(EconModelClass):
 
 		par.ref_income_u = np.zeros(par.T+int(par.N))		# Stores the income history of unemployed individuals. 
 		par.ref_income_u[0:int(par.N)] = par.w				# Some buffer zone? S: I første periode af arbejdsløshed er referencepointet givet ved lønnen
-		par.ref_income_u[int(par.N):] = par.income_u[:-1]			# Stores actual income levels for unemployed individuals
+		par.ref_income_u[int(par.N):] = par.income_u			# Stores actual income levels for unemployed individuals
 		
 		for t in range(par.T):
 			par.r_u[t] = par.ref_income_u[t:t+int(par.N)].mean()		# Calculates the reference point for unemployed individuals by taking the mean of the income over the last N periods. 
@@ -124,7 +124,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.ref_income_e = np.zeros((par.T, par.T+2*int(par.N)))		# Stores the income history of employed individuals R: Hvorfor 2 gange N?
 		for t in range(par.T):
 			par.ref_income_e[t, 0:int(par.N)] = par.w
-			par.ref_income_e[t, int(par.N):par.T+int(par.N)] = par.income_e[t, :-1]
+			par.ref_income_e[t, int(par.N):par.T+int(par.N)] = par.income_e[t, :]
 			par.ref_income_e[t, par.T+int(par.N):] = par.w
 			for s in range(par.T+int(par.N)):
 				par.r_e[t, s] = par.ref_income_e[t, s:s+int(par.N)].mean()

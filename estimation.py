@@ -9,7 +9,6 @@ import scipy.optimize as optimize
 from Funcs import *
 from hand_to_mouth import *
 from scipy.io import loadmat
-import Model
 
 
 def updatepar(par, parnames, parvals):
@@ -53,7 +52,6 @@ def sum_squared_diff_moments(theta,model,est_par):
     moments_after = data.moments_before
     # print(np.shape(moments_after))
     moments_after = moments_after.reshape(35)
-    # print(theta)
 
     diff = (moments-moments_after)
    
