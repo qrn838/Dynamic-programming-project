@@ -23,7 +23,7 @@ class ReferenceDependenceClass(EconModelClass):
 		data = self.data
 		# Data
 		# get the data
-		data.data = loadmat('Data\Moments_hazard.mat')
+		data.data = loadmat('/Users/sophiebune/Desktop/Dynamic-programming-project/Data/Moments_hazard_wcontrols.mat')
 
 		# Access the 'Moments' table
 		data.moments = data.data['Moments']
@@ -47,21 +47,21 @@ class ReferenceDependenceClass(EconModelClass):
 
 		par.N = 15 #Number of reference periods
 		# Transfers Structure
-		par.T1 = 10   #Time with high transfers
-		par.T2 = 10   #Time with medium transfers   R: Saa altsaa foer front loading eller hvad? S: Det gør det bare muligt at lave både front loading
+		par.T1 = 6   #Time with high transfers
+		par.T2 = 12   #Time with medium transfers   R: Saa altsaa foer front loading eller hvad? S: Det gør det bare muligt at lave både front loading
 		par.T3 = par.N+1 #Time with low transfers
-		par.T =  data.num_elements_before  #par.T1 + par.T2 + par.T3 #Total number of periods
+		par.T =  par.T1 + par.T2 + par.T3 + 1 #Total number of periods
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
-		par.b1 = 0.6*par.w    # High transfers
-		par.b2 = 0.5*par.w    # Medium transfers
-		par.b3 = 0.4*par.w    # Low transfers
+		par.b1 = 342/675*par.w    # High transfers
+		par.b2 = 171/675*par.w    # Medium transfers
+		par.b3 = 114/675*par.w    # Low transfers
 
 		# Preferences
-		par.eta = 1.0	 # Captures reference point
-		par.sigma = 2.0  # Lambda in the paper, i.e. loss aversion
-		par.delta = 0.9  # Discount factor
+		par.eta = 1.0	 # Captures reference dependence
+		par.sigma = 2.23  # Lambda in the paper, i.e. loss aversion
+		par.delta = 0.995  # Discount factor
 	
 
 		par.Nstates_fixed = 0 # number of fixed states
@@ -70,11 +70,11 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nstates_dynamic_pd = 2 # number of dynamic post-decision states (Employed/Unemployed)
 		par.Nactions = 1 # number of actions (Search effort)
 	
-		par.cost = np.array([5.0,7.0,10.0])
-		par.gamma = 1.0
-		par.types = 3
+		par.cost = np.array([107.0,310.4])
+		par.gamma = 0.06
+		par.types = 2
 
-		par.type_shares = np.array([0.4,0.4,0.2])
+		par.type_shares = np.array([0.17,0.83])
 
 		
 		

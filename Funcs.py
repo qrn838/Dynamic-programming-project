@@ -22,7 +22,7 @@ def cost(par,s):
     c = np.zeros(3)
     c[0] = par.cost[0]*s**(1+par.gamma)/(1+par.gamma)
     c[1] = par.cost[1]*s**(1+par.gamma)/(1+par.gamma)
-    c[2] = par.cost[2]*s**(1+par.gamma)/(1+par.gamma)
+    #c[2] = par.cost[2]*s**(1+par.gamma)/(1+par.gamma)
     
     return c
 
@@ -31,7 +31,7 @@ def marg_cost(par,s):
     c_marg = np.zeros(3)
     c_marg[0] = par.cost[0]*s**(par.gamma)
     c_marg[1] = par.cost[1]*s**(par.gamma)
-    c_marg[2] = par.cost[2]*s**(par.gamma)
+    #c_marg[2] = par.cost[2]*s**(par.gamma)
     return c_marg
 
 def inv_marg_cost(par, s):
@@ -39,5 +39,5 @@ def inv_marg_cost(par, s):
     inv_c_marg = np.zeros(3)
     inv_c_marg[0] = (s/par.cost[0])**(1/par.gamma)
     inv_c_marg[1] = (s/par.cost[1])**(1/par.gamma)
-    inv_c_marg[2] = (s/par.cost[2])**(1/par.gamma)
+    #inv_c_marg[2] = (s/par.cost[2])**(1/par.gamma)
     return inv_c_marg
