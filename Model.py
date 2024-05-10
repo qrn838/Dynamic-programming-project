@@ -23,7 +23,7 @@ class ReferenceDependenceClass(EconModelClass):
 		data = self.data
 		# Data
 		# get the data
-		data.data = loadmat('Data/Moments_hazard_wcontrols.mat')
+		data.data = loadmat('Data/Moments_hazard.mat')
 
 		# Access the 'Moments' table
 		data.moments = data.data['Moments']
