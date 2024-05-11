@@ -70,7 +70,10 @@ def sim_search_effort(par):
     #Get policy functions
     s = solve_search_effort(par)
 
-    type_shares = np.array([par.type_shares1, par.type_shares2])
+    if par.eta == 0:
+        type_shares = np.array([par.type_shares1, par.type_shares2, par.type_shares3])
+    else:
+        type_shares = np.array([par.type_shares1, par.type_shares2])
 
     """ Simulate search effort """
     s_sim = np.zeros((par.T))

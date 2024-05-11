@@ -77,15 +77,18 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nstates_dynamic_pd = 2 # number of dynamic post-decision states (Employed/Unemployed)
 		par.Nactions = 1 # number of actions (Search effort)
 	
-		
+		# Heterogeneity in search costs
 		par.cost1 = 107.0
 		par.cost2 = 310.4
-		par.gamma = 0.06
 		par.types = 2
-
-		
+		par.gamma = 0.06
 		par.type_shares1 = 0.17
 		par.type_shares2 = 1-par.type_shares1
+
+		if par.eta==0:				# Standard model - Three types of search costs
+			par.cost3 = 300.0
+			par.types = 3
+			par.type_shares3 = 0.01
 
 		
 		
