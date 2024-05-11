@@ -50,16 +50,19 @@ class ReferenceDependenceClass(EconModelClass):
 		# Transfers Structure
 		par.T1 = 6   #Time with high transfers
 		par.T2 = 12   #Time with medium transfers   R: Saa altsaa foer front loading eller hvad? S: Det gør det bare muligt at lave både front loading
-		par.T3 = par.N+par.M #Time with low transfers
-		par.T =  par.T1 + par.T2 + par.T3  #Total number of periods
+		par.T3 = 6 #Time with low transfers
+		par.T =  par.T1 + par.T2 + par.T3 + par.N+par.M #Total number of periods
 		par.T_sim = 35 #Number of periods in the simulation
 		
         # Income Structure
 		par.w = 1.0     		    #Normalize wages
+		par.welfare = 90/675	    # Welfare level
 		# par.b1 = 342/675*par.w    # High transfers
 		# par.b2 = 171/675*par.w    # Medium transfers
 		par.b3 = 114/675*par.w      # Low transfers
-		par.b1 = 223/675*par.w    
+		par.b4 = par.welfare*par.w	# Welfare
+
+		par.b1 = 222/675*par.w    
 		par.b2 = par.b1
 
 		# Preferences
@@ -99,7 +102,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par.income_u = np.zeros(par.T)				# Empty array to store benefits
 		par.income_u[0:par.T1] = par.b1					# Benefits in first T1 periods (high benefits)
 		par.income_u[par.T1:par.T1+par.T2] = par.b2		# Benefite in middle T2 periods (medium benefits)
-		par.income_u[par.T1+par.T2:] = par.b3			# Benefits in last T3 periods (low benefits)
+		par.income_u[par.T1+par.T2:par.T1+par.T2+par.T3] = par.b3		# Benefits in T3 periods (low benefits)
+		par.income_u[par.T1+par.T2+par.T3:] = par.b4		# Benefits in the rest of the periods (welfare)
 	
         #Income when employed
 		par.income_e = np.zeros((par.T, par.T))		# Empty array to store income

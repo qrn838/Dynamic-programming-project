@@ -34,7 +34,6 @@ def method_simulated_moments(model,est_par,theta0, bounds):
 
     return res
 
-
 def sum_squared_diff_moments(theta,model,est_par):
 
     #Update parameters
@@ -46,18 +45,52 @@ def sum_squared_diff_moments(theta,model,est_par):
     model.allocate()
     
     # Objective function
-    weight_mat = data.vc_controls_before   
-    moments =  model.solve()   
+    weight_mat_before = data.vc_controls_before
+    weight_mat_after = data.vc_controls_after 
 
-    moments_after = data.moments_before
-    # print(np.shape(moments_after))
+    moments_cal =  model.solve()   
+
+    moments_before = data.moments_before
+    moments_before = moments_before.reshape(35)
+
+    moments_after = data.moments_after
     moments_after = moments_after.reshape(35)
 
-    diff = (moments-moments_after)
+    diff1 = (moments_cal-moments_before)
    
-    res = (diff.T @ weight_mat @ diff)*100
+    res1 = (diff1.T @ weight_mat_before @ diff1)*100
+
+    diff2 = (moments_cal-moments_after)
+   
+    res2 = (diff2.T @ weight_mat_after @ diff2)*100
+
+    tot_res = res1 + res2
      
-    return res
+    return tot_res
+
+# def sum_squared_diff_moments(theta,model,est_par):
+
+#     #Update parameters
+#     par = model.par
+#     data = model.data
+#     par = updatepar(par,est_par,theta)
+
+#     # Solve the model
+#     model.allocate()
+    
+#     # Objective function
+#     weight_mat = data.vc_controls_before   
+#     moments =  model.solve()   
+
+#     moments_after = data.moments_before
+#     # print(np.shape(moments_after))
+#     moments_after = moments_after.reshape(35)
+
+#     diff = (moments-moments_after)
+   
+#     res = (diff.T @ weight_mat @ diff)*100
+     
+#     return res
 
     
     
