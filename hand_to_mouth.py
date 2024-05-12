@@ -76,17 +76,31 @@ def sim_search_effort(par):
         type_shares = np.array([par.type_shares1, par.type_shares2])
 
     """ Simulate search effort """
-    s_sim = np.zeros((par.T))
-    for t in range(par.T):
-        if t == 0:
-            type_shares = type_shares[:par.types]
-            s_sim[t] = type_shares @ s[:,t]  # search effort is weighted average of search efforts of types
-        else:
-            type_shares = type_shares*(1-s[:,t])  # update type shares as people get employed
-            type_shares = type_shares/np.sum(type_shares) # normalize
-            s_sim[t] = type_shares @ s[:,t]
+    # s_sim = np.zeros((par.T))
+    # for t in range(par.T):
+    #     if t == 0:
+    #         type_shares = type_shares[:par.types]
+    #         s_sim[t] = type_shares @ s[:,t]  # search effort is weighted average of search efforts of types
+    #     else:
+    #         type_shares = type_shares*(1-s[:,t])  # update type shares as people get employed
+    #         type_shares = type_shares/np.sum(type_shares) # normalize
+    #         s_sim[t] = type_shares @ s[:,t]
     
-    s_sim = s_sim[:par.T_sim]
+    # s_sim = s_sim[:par.T_sim]
+
+    s_sim = np.zeros(par.T_sim)
+    for t in range(par.T_sim):
+        if t == 0:
+            # Initial search effort is the weighted average of search efforts of types
+            s_sim[t] = type_shares @ s[:, t]  
+        else:
+            # Update type shares as people get employed
+            type_shares *= (1 - s[:, t])
+            # Normalize type shares
+            type_shares /= np.sum(type_shares)
+            # Calculate search effort for the next period
+            s_sim[t] = type_shares @ s[:, t]
+
     return s_sim
 
 

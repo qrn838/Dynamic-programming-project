@@ -106,7 +106,7 @@ def sum_squared_diff_moments(theta,model,est_par,weight):
     if weight==True:
         res = (diff.T @ weight_mat @ diff) 
     else:
-        res = (diff.T @ diff)
+        res = (diff.T @ np.eye(35) @ diff)
      
     return res
 

@@ -86,9 +86,13 @@ class ReferenceDependenceClass(EconModelClass):
 		par.type_shares2 = 1-par.type_shares1
 
 		if par.eta==0:				# Standard model - Three types of search costs
-			par.cost3 = 300.0
+			par.cost1 = 84.3
+			par.cost2 = 242.8
+			par.cost3 = 310.3
 			par.types = 3
-			par.type_shares3 = 0.01
+			par.type_shares1 = 0.415
+			par.type_shares2 = 0.575
+			par.type_shares3 = 1-par.type_shares1-par.type_shares2
 
 		
 		
