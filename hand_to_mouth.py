@@ -92,34 +92,21 @@ def sim_search_effort(par):
 
 
     ### Works ###
-    # s_sim = np.zeros(par.T_sim)
-    # for t in range(par.T_sim):
-    #     if t == 0:
-    #         # Initial search effort is the weighted average of search efforts of types
-    #         s_sim[t] = type_shares @ s[:, t]  
-    #     else:
-    #         # Update type shares as people get employed
-    #         type_shares *= (1 - s[:, t])
-    #         # Normalize type shares
-    #         type_shares /= np.sum(type_shares)
-    #         # Calculate search effort for the next period
-    #         s_sim[t] = type_shares @ s[:, t]
+    s_sim = np.zeros(par.T_sim)
+    for t in range(par.T_sim):
+        if t == 0:
+            # Initial search effort is the weighted average of search efforts of types
+            s_sim[t] = type_shares @ s[:, t]  
+        else:
+            # Update type shares as people get employed
+            type_shares *= (1 - s[:, t])
+            # Normalize type shares
+            type_shares /= np.sum(type_shares)
+            # Calculate search effort for the next period
+            s_sim[t] = type_shares @ s[:, t]
 
-    # Multiple types
-    s_sim = np.zeros((par.types, par.T_sim))
-    for i in range(par.types):
-        for t in range(par.T_sim):
-            if t == 0:
-                # Initial search effort is the weighted average of search efforts of types
-                s_sim[i, t] = np.dot(type_shares[i], s[i, t])
-            else:
-                # Update type shares as people get employed
-                type_shares[i] *= (1 - s[i, t])
-                # Normalize type shares for each type
-                type_shares[i] /= np.sum(type_shares[i])
-                # Calculate search effort for the next period
-                s_sim[i, t] = np.dot(type_shares[i], s[i, t])
 
+    
     return s_sim
 
 
