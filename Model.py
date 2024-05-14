@@ -44,9 +44,14 @@ class ReferenceDependenceClass(EconModelClass):
 		par.delta = 0.8  ### Discount factor
 
 		#Savings
-		par.R = 1/par.delta   #Interest rate
+		par.R = 1/par.delta    #Interest rate
 		par.A_0 = 0.0  #Initial assets 
 		par.L = -1.0  # borrowing constraint
+
+
+		# EGM does not give the same as VFI if R is not 1/delta, if eta is different from zero, or if sigma is different from 1
+		# It gives the same if eta = 0 or eta = anything and sigma = 1 as long as R = 1/delta
+		
 		
 		
 	

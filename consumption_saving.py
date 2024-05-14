@@ -45,23 +45,26 @@ def value_function_employment(par, sol):
                 else: # Cosumption saving problem
 
                     if par.euler == False:  # With optimizer
-                        a_next_guess = a_next[i_t, i_n+1, i_a]
                         lower_bound = par.L
-                        upper_bound = (par.a_grid[i_a] + par.w)*par.R - 10e-6  # consumption must be positive
+                        upper_bound = (par.a_grid[i_a] + par.w) * par.R - 10e-6  # consumption must be positive
                         upper_bound = min(upper_bound, par.A_0)
-                        result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]), method='nelder-mead', bounds=[(lower_bound, upper_bound)])  #SLSQP
+
+                        # Run the optimizer using minimize_scalar with method='golden'
+                        result = minimize_scalar(objective_function, bounds=(lower_bound, upper_bound), args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n + 1, :]), method='bounded')
+
                         if result.success:
-                            a_next[i_t, i_n, i_a] = result.x[0]
+                            a_next[i_t, i_n, i_a] = result.x
                             V_e[i_t, i_n, i_a] = -result.fun
-                            
                         else:
                             print("Error at t={}, i_n={}, i_a={}".format(i_t, i_n, i_a))
                             print("Error message:", result.message)
+                            print("Current function value:", result.fun)
+                            print("Optimization result details:", result)
                     
                     elif par.euler == True:  # EGM
                         # a_grid is now seen as next period assets
                         m = par.a_grid[:] + par.w  #exo grid. How much cash on hand you start the period with
-                        c_next_int = interp1d(m,c_egm[i_t,i_n+1,:])
+                        c_next_int = interp1d(m,c_egm[i_t,i_n+1,:], fill_value="extrapolate")
                         c_next = c_next_int(m_egm[i_t,i_n+1,i_a])
 
                         marg_util_next = par.delta * par.R * marginal_utility(par, c_next, par.r_e_m[i_t, i_t + i_n+1])
@@ -79,11 +82,11 @@ def value_function_employment(par, sol):
                         if m1 > par.w:
                             c1 = par.w - par.a_grid[i_a] / (par.R)
                             m1 = par.w
-                            a1 = interp1d(m, par.a_grid)(m1)
+                            a1 = interp1d(m, par.a_grid, fill_value="extrapolate")(m1)
                         if m2 > par.w:
                             c2 = par.w - par.a_grid[i_a] / (par.R)
                             m2 = par.w
-                            a2 = interp1d(m, par.a_grid)(m2)
+                            a2 = interp1d(m, par.a_grid, fill_value="extrapolate")(m2)
 
                   
                         if c1 >= par.r_e_m[i_t, i_t + i_n] and c2 >= par.r_e_m[i_t, i_t + i_n]:
@@ -110,7 +113,7 @@ def value_function_employment(par, sol):
                                 m_egm[i_t, i_n, i_a] = m2
                                 a_next[i_t, i_n, i_a] = a2                            
 
-                        V_e[i_t, i_n, i_a] = utility(par, c_egm[i_t, i_n, i_a], par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid,V_e_next[i_t, i_n+1, :])(a_next[i_t, i_n, i_a])
+                        V_e[i_t, i_n, i_a] = utility(par, c_egm[i_t, i_n, i_a], par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid,V_e_next[i_t, i_n+1, :],fill_value="extrapolate")(a_next[i_t, i_n, i_a])
 
                 V_e_next[i_t, i_n, i_a] = V_e[i_t, i_n, i_a]
                 
@@ -176,19 +179,18 @@ def solve_search_and_consumption(par, sol):
                     s = inv_marg_cost(par.delta*(V_e_next-V_u_next))
                     V_u = utility(par,c,r) - cost(s) + par.delta * (s * V_e_next+(1-s)*V_u_next)
                     return -V_u
-                
-                a_next_guess = par.a_grid[i_a]
+        
 
                 lower_bound = par.L
                 upper_bound = (par.a_grid[i_a] + par.income_u[t])*par.R - 10e-6
                 upper_bound = min(upper_bound, par.A_0)
-                result = minimize(objective_function_ti, a_next_guess, args=(par, t, V_u_next[t+1,:]), method='nelder-mead', bounds=[(lower_bound, upper_bound)])
+                result = minimize_scalar(objective_function_ti, bounds=(lower_bound, upper_bound), args=(par, t, V_u_next[t+1,:]), method='bounded')
 
                              
                 # Extract optimal a_next
                 if result.success:
                                       
-                    a_next[t, i_a] = result.x[0]
+                    a_next[t, i_a] = result.x
                     V_u[t,i_a] = -result.fun
                     
                     V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[t+1, :])
@@ -201,6 +203,8 @@ def solve_search_and_consumption(par, sol):
                 else:
                     print("Error at t={}, i_a={}".format(t, i_a))
                     print("Error message:", result.message)
+                    print("Current function value:", result.fun)
+                    print("Optimization result details:", result)
 
             V_u_next[t,i_a] = V_u[t,i_a]
         
