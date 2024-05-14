@@ -49,17 +49,18 @@ def value_function_employment(par, sol):
                         lower_bound = par.L
                         upper_bound = (par.a_grid[i_a] + par.w)*par.R - 10e-6  # consumption must be positive
                         upper_bound = min(upper_bound, par.A_0)
-                        result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]), method='SLSQP', bounds=[(lower_bound, upper_bound)])
+                        result = minimize(objective_function, a_next_guess, args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n+1, :]), method='nelder-mead', bounds=[(lower_bound, upper_bound)])  #SLSQP
                         if result.success:
                             a_next[i_t, i_n, i_a] = result.x[0]
                             V_e[i_t, i_n, i_a] = -result.fun
                             
                         else:
                             print("Error at t={}, i_n={}, i_a={}".format(i_t, i_n, i_a))
+                            print("Error message:", result.message)
                     
                     elif par.euler == True:  # EGM
                         # a_grid is now seen as next period assets
-                        m = par.a_grid[:] + par.w  #exo grid
+                        m = par.a_grid[:] + par.w  #exo grid. How much cash on hand you start the period with
                         c_next_int = interp1d(m,c_egm[i_t,i_n+1,:])
                         c_next = c_next_int(m_egm[i_t,i_n+1,i_a])
 
@@ -67,25 +68,22 @@ def value_function_employment(par, sol):
                         c1 = inv_marg_utility_1(par, marg_util_next)
                         c2 = inv_marg_utility_2(par, marg_util_next)
 
-                        m1 = par.a_grid[i_a]/par.R + c1
+                        m1 = par.a_grid[i_a]/par.R + c1 # chash on hand needen this period to obtain c and next period assets
                         m2 = par.a_grid[i_a]/par.R + c2
 
                         #next period savings as function of current cash-on-hand
                         a1 = interp1d(m, par.a_grid, fill_value="extrapolate")(m1)
                         a2 = interp1d(m, par.a_grid, fill_value="extrapolate")(m2)
 
-                        # if you are not spending enough...
-                        if m1 < par.a_grid[0] + par.w:
-                            c1 = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
-                            m1 = par.a_grid[i_a]/par.R + c1
+                        # constraints
+                        if m1 > par.w:
+                            c1 = par.w - par.a_grid[i_a] / (par.R)
+                            m1 = par.w
                             a1 = interp1d(m, par.a_grid)(m1)
-                        if m2 < par.a_grid[0] + par.w:
-                            c2 = par.a_grid[i_a] + par.w - par.a_grid[i_a] / (par.R)
-                            m2 = par.a_grid[i_a]/par.R + c2
+                        if m2 > par.w:
+                            c2 = par.w - par.a_grid[i_a] / (par.R)
+                            m2 = par.w
                             a2 = interp1d(m, par.a_grid)(m2)
-
-                        ###  FIND OUT HOW TO HANDLE BORROWING CONSTRAINTS 
-
 
                   
                         if c1 >= par.r_e_m[i_t, i_t + i_n] and c2 >= par.r_e_m[i_t, i_t + i_n]:
@@ -123,20 +121,19 @@ def value_function_employment(par, sol):
 
 
 
-### USE OPTIMIZER INSTEAD OF THE ROOT FINDING STUFF ###
+# Search effort unemployed SS
+
 def unemployment_ss(par, t, i_a):
     V_e = par.V_e_t_a[t, i_a]
     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
     r = par.r_u[t]
 
-    # Define the function for which we want to find the root
     def bellman_difference(V_u):
         s = inv_marg_cost(par.delta*(V_e-V_u))
         V_u_new = (utility(par,c,r) - cost(s) + par.delta * (s * V_e + (1-s)*V_u)) 
         
         return V_u_new - V_u
 
-    # Use Brent's method to find the root
     V_u = brentq(bellman_difference, -10, 0)
     s = inv_marg_cost(par.delta*(V_e-V_u))
 
@@ -185,7 +182,8 @@ def solve_search_and_consumption(par, sol):
                 lower_bound = par.L
                 upper_bound = (par.a_grid[i_a] + par.income_u[t])*par.R - 10e-6
                 upper_bound = min(upper_bound, par.A_0)
-                result = minimize(objective_function_ti, a_next_guess, args=(par, t, V_u_next[t+1,:]), method='SLSQP', bounds=[(lower_bound, upper_bound)])
+                result = minimize(objective_function_ti, a_next_guess, args=(par, t, V_u_next[t+1,:]), method='nelder-mead', bounds=[(lower_bound, upper_bound)])
+
                              
                 # Extract optimal a_next
                 if result.success:
@@ -202,6 +200,7 @@ def solve_search_and_consumption(par, sol):
               
                 else:
                     print("Error at t={}, i_a={}".format(t, i_a))
+                    print("Error message:", result.message)
 
             V_u_next[t,i_a] = V_u[t,i_a]
         
