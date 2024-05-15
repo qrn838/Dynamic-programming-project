@@ -1,0 +1,9 @@
+In Model, line 129: Why is it par.r_u = np.zeros(par.T)
+and not par.r_u = np.zeros(par.T+par.N) like with employed?
+
+
+In Model, line 136: Should it be par.r_u[t] = par.ref_income_u[t:t+int(par.N)].mean()
+or par.r_u[t] = par.ref_income_u[t+int(par.N):t].mean()
+
+In Model, line 150-152: Why don't we calculate the mean here?
+
