@@ -1,6 +1,10 @@
 import numpy as np
 import copy
 from scipy.optimize import minimize
+from scipy.optimize import minimize_scalar
+from scipy.interpolate import interp1d
+from scipy.optimize import brentq
+import scipy.optimize as optimize
 
 from Funcs import *
 
@@ -26,7 +30,7 @@ def unemployed_ss(par,i):
 
     def objective_function(s, par, i):
         V_e = value_function_employment(par, par.w, par.T - 1)
-        V_u = (consumption_utility(par.b3) - cost(par,s)[i] + par.delta * (s * V_e)) / (1-par.delta*(1-s))
+        V_u = (consumption_utility(par.b4) - cost(par,s)[i] + par.delta * (s * V_e)) / (1-par.delta*(1-s))
         return -V_u  # Minimize the negative of V_u to maximize V_u
 
     # Perform optimization
@@ -38,6 +42,25 @@ def unemployed_ss(par,i):
     V_u_ss = -result.fun
 
     return optimal_s_ss, V_u_ss
+
+# Search effort unemployed SS
+
+# def unemployed_ss(par, t, i):
+
+#     V_e = value_function_employment(par, par.w, par.T - 1)
+#     c = par.b4
+#     r = par.r_u[t]
+
+#     def bellman_difference(V_u):
+#         s = inv_marg_cost(par.delta*(V_e-V_u))
+#         V_u_new = (utility(par,c,r) - cost(s) + par.delta * (s * V_e + (1-s)*V_u)) 
+        
+#         return V_u_new - V_u
+
+#     V_u = brentq(bellman_difference, -10, 0)
+#     s = inv_marg_cost(par.delta*(V_e-V_u))
+
+#     return V_u,s
 
 
 
@@ -53,7 +76,7 @@ def solve_search_effort(par):
         # b. solve
         for t in range(par.T - 1, -1, -1):
             if t == par.T - 1:
-                s[i,t], V_u[i,t] = unemployed_ss(par,i)
+                s[i,t], V_u[i,t] = unemployed_ss(par, i)
             
             else:
             
@@ -70,13 +93,13 @@ def sim_search_effort(par):
     #Get policy functions
     s = solve_search_effort(par)
 
-    type_shares = np.array([par.type_shares1, par.type_shares2])
+    type_shares = np.array([par.type_shares1, par.type_shares2, par.type_shares3])
+    type_shares = type_shares[:par.types]
 
     """ Simulate search effort """
     s_sim = np.zeros((par.T))
     for t in range(par.T):
         if t == 0:
-            type_shares = type_shares[:par.types]
             s_sim[t] = type_shares @ s[:,t]  # search effort is weighted average of search efforts of types
         else:
             type_shares = type_shares*(1-s[:,t])  # update type shares as people get employed

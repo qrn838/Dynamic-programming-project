@@ -20,6 +20,7 @@ def updatepar(par, parnames, parvals):
         if parname == 'N':
             '''If variable name is N set to integer'''
             setattr(par,parname,int(parval))
+
     return par
 
 
@@ -55,7 +56,7 @@ def sum_squared_diff_moments(theta,model,est_par):
 
     diff = (moments-moments_after)
    
-    res = (diff.T @ weight_mat @ diff)*100
+    res = (diff.T @ np.eye(35) @ diff)*100
      
     return res
 
