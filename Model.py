@@ -50,22 +50,27 @@ class ReferenceDependenceClass(EconModelClass):
 		# Transfers Structure
 		par.T1 = 6   #Time with high transfers
 		par.T2 = 12   #Time with medium transfers   R: Saa altsaa foer front loading eller hvad? S: Det gør det bare muligt at lave både front loading
-		par.T3 = par.N+par.M #Time with low transfers
-		par.T =  par.T1 + par.T2 + par.T3  #Total number of periods
+		par.T3 = 6 #Time with low transfers
+		par.T =  par.T1 + par.T2 + par.T3 + par.N+par.M #Total number of periods
 		par.T_sim = 35 #Number of periods in the simulation
 		
         # Income Structure
 		par.w = 1.0     		    #Normalize wages
+		par.welfare = 90/675	    # Welfare level
 		# par.b1 = 342/675*par.w    # High transfers
 		# par.b2 = 171/675*par.w    # Medium transfers
 		par.b3 = 114/675*par.w      # Low transfers
-		par.b1 = 223/675*par.w    
+		par.b4 = par.welfare*par.w	# Welfare
+
+		par.b1 = 222/675*par.w    
 		par.b2 = par.b1
 
 		# Preferences
 		par.eta = 1.0	   # Captures reference dependence
 		par.sigma = 2.23   # Lambda in the paper, i.e. loss aversion
 		par.delta = 0.995  # Discount factor
+
+
 	
 
 		par.Nstates_fixed = 0 # number of fixed states
@@ -77,11 +82,15 @@ class ReferenceDependenceClass(EconModelClass):
 		
 		par.cost1 = 107.0
 		par.cost2 = 310.4
+		par.cost3 = 570.0
 		par.gamma = 0.06
-		par.types = 2
+
+
+		par.types = 3
 
 		
 		par.type_shares1 = 0.17
+		par.type_shares3 = 0.0
 		
 
 		
@@ -93,13 +102,14 @@ class ReferenceDependenceClass(EconModelClass):
 		# a. unpack
 		par = self.par
 
-		par.type_shares2 = 1-par.type_shares1
+		par.type_shares2 = 1-par.type_shares1 - par.type_shares3
 		
         #Income when unemployed
 		par.income_u = np.zeros(par.T)				# Empty array to store benefits
 		par.income_u[0:par.T1] = par.b1					# Benefits in first T1 periods (high benefits)
 		par.income_u[par.T1:par.T1+par.T2] = par.b2		# Benefite in middle T2 periods (medium benefits)
-		par.income_u[par.T1+par.T2:] = par.b3			# Benefits in last T3 periods (low benefits)
+		par.income_u[par.T1+par.T2:par.T1+par.T2+ par.T3] = par.b3			# Benefits in last T3 periods (low benefits)
+		par.income_u[par.T1+par.T2+par.T3:] = par.b4		# Benefits after T3 periods (welfare)
 	
         #Income when employed
 		par.income_e = np.zeros((par.T, par.T))		# Empty array to store income

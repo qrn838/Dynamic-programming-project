@@ -30,7 +30,7 @@ def method_simulated_moments(model,est_par,theta0, bounds):
 
     # Estimate
     obj_fun = lambda x: sum_squared_diff_moments(x,model,est_par)
-    res = minimize(obj_fun,theta0, method='nelder-mead', bounds = bounds)
+    res = minimize(obj_fun,theta0, method='SLSQP', bounds = bounds)
 
     return res
 
@@ -55,7 +55,7 @@ def sum_squared_diff_moments(theta,model,est_par):
 
     diff = (moments-moments_after)
    
-    res = (diff.T @ weight_mat @ diff)*100
+    res = (diff.T @ np.eye(35) @ diff)*100
      
     return res
 

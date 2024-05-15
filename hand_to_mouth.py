@@ -26,7 +26,7 @@ def unemployed_ss(par,i):
 
     def objective_function(s, par, i):
         V_e = value_function_employment(par, par.w, par.T - 1)
-        V_u = (consumption_utility(par.b3) - cost(par,s)[i] + par.delta * (s * V_e)) / (1-par.delta*(1-s))
+        V_u = (consumption_utility(par.b4) - cost(par,s)[i] + par.delta * (s * V_e)) / (1-par.delta*(1-s))
         return -V_u  # Minimize the negative of V_u to maximize V_u
 
     # Perform optimization
@@ -70,13 +70,12 @@ def sim_search_effort(par):
     #Get policy functions
     s = solve_search_effort(par)
 
-    type_shares = np.array([par.type_shares1, par.type_shares2])
+    type_shares = np.array([par.type_shares1, par.type_shares2, par.type_shares3])
 
     """ Simulate search effort """
     s_sim = np.zeros((par.T))
     for t in range(par.T):
         if t == 0:
-            type_shares = type_shares[:par.types]
             s_sim[t] = type_shares @ s[:,t]  # search effort is weighted average of search efforts of types
         else:
             type_shares = type_shares*(1-s[:,t])  # update type shares as people get employed
