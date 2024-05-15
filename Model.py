@@ -44,6 +44,7 @@ class ReferenceDependenceClass(EconModelClass):
 
 
 		# model
+		par.full_sample_estimation = True
 
 		par.N = 15 #Number of reference periods
 		par.M = 10 #Number of periods in the future to ensure convergence
