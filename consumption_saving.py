@@ -5,6 +5,7 @@ from scipy.optimize import minimize_scalar
 from scipy.interpolate import interp1d
 from scipy.optimize import brentq
 import scipy.optimize as optimize
+from scipy.optimize import bisect
 import numba
 
 from Funcs import *
@@ -126,21 +127,69 @@ def value_function_employment(par, sol):
 
 # Search effort unemployed SS
 
+# def unemployment_ss(par, t, i_a):
+#     V_e = par.V_e_t_a[t, i_a]
+#     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
+#     r = par.r_u[t]
+
+#     def bellman_difference(V_u):
+#         s = inv_marg_cost(par.delta*(V_e-V_u))
+#         V_u_new = (utility(par,c,r) - cost(s) + par.delta * (s * V_e + (1-s)*V_u)) 
+        
+#         return V_u_new - V_u
+    
+#     a = -20
+#     b = 10
+#     V_u = bisect(bellman_difference, a, b)
+#     #V_u = brentq(bellman_difference, -5, 5)
+#     s = inv_marg_cost(par.delta*(V_e-V_u))
+
+#     return V_u,s
+
 def unemployment_ss(par, t, i_a):
     V_e = par.V_e_t_a[t, i_a]
     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
     r = par.r_u[t]
 
     def bellman_difference(V_u):
-        s = inv_marg_cost(par.delta*(V_e-V_u))
-        V_u_new = (utility(par,c,r) - cost(s) + par.delta * (s * V_e + (1-s)*V_u)) 
-        
+        s = inv_marg_cost(par.delta * (V_e - V_u))
+        V_u_new = utility(par, c, r) - cost(s) + par.delta * (s * V_e + (1 - s) * V_u)
         return V_u_new - V_u
 
-    V_u = brentq(bellman_difference, -10, 0)
-    s = inv_marg_cost(par.delta*(V_e-V_u))
+    # Check values at the initial interval endpoints
+    a, b = -1, 1
+    fa = bellman_difference(a)
+    fb = bellman_difference(b)
+    print(f"bellman_difference({a}) = {fa}")
+    print(f"bellman_difference({b}) = {fb}")
 
-    return V_u,s
+    # If the initial interval does not work, try finding a suitable interval by expanding
+    if fa * fb > 0:
+        print("The function does not have different signs at the endpoints. Trying to find a valid interval...")
+        interval_found = False
+        
+        # Generate search intervals dynamically
+        factors = [1, 5, 10, 20, 50, 100, 200, 500]
+        search_intervals = [(-factor, 0) for factor in factors] + [(-factor, 1) for factor in factors]
+
+        for new_a, new_b in search_intervals:
+            fa = bellman_difference(new_a)
+            fb = bellman_difference(new_b)
+            print(f"Trying interval [{new_a}, {new_b}] with function values {fa}, {fb}")
+            if fa * fb < 0:
+                a, b = new_a, new_b
+                interval_found = True
+                print(f"Found valid interval: [{a}, {b}] with function values {fa}, {fb}")
+                break
+
+        if not interval_found:
+            raise ValueError("Could not find a valid interval where the function has different signs.")
+
+    # Perform the root finding
+    V_u = brentq(bellman_difference, a, b)
+    s = inv_marg_cost(par.delta * (V_e - V_u))
+
+    return V_u, s
 
 
 
@@ -250,7 +299,7 @@ def solve_forward_employment(par, sol, sim):
                     a_next[t, n] = sol.a_next_e[t, n, -1]
                 else:
                     a = a_next[t, n-1]
-                    a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :])
+                    a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
                     a_next[t, n] = a_next_interp(a)
             else:
                 if n == 0:
@@ -259,11 +308,11 @@ def solve_forward_employment(par, sol, sim):
 
                 elif n == 1:
                     a = sim.a_next[t-1]
-                    a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :])
+                    a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
                     a_next[t, n] = a_next_interp(a)
                 else:
                     a = a_next[t, n-1]
-                    a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :])
+                    a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
                     a_next[t, n] = a_next_interp(a)
     sim.a_e = a_next
 

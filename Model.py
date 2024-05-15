@@ -40,13 +40,13 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# Preferences
 		par.eta = 1.0  ### Reference dependence parameter
-		par.sigma = 2.0  ### Lambda in the paper
-		par.delta = 0.8  ### Discount factor
+		par.sigma = 1.0  ### Lambda in the paper
+		par.delta = 0.999  ### Discount factor
 
 		#Savings
-		par.R = 1/par.delta    #Interest rate
+		par.R = 1/par.delta + 0.0001   #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -1.0  # borrowing constraint
+		par.L = -2.0  # borrowing constraint
 
 
 		# EGM does not give the same as VFI if R is not 1/delta, if eta is different from zero, or if sigma is different from 1
