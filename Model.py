@@ -82,7 +82,7 @@ class ReferenceDependenceClass(EconModelClass):
 
 		
 		par.type_shares1 = 0.17
-		par.type_shares2 = 1-par.type_shares1
+		
 
 		
 		
@@ -93,7 +93,7 @@ class ReferenceDependenceClass(EconModelClass):
 		# a. unpack
 		par = self.par
 
-
+		par.type_shares2 = 1-par.type_shares1
 		
         #Income when unemployed
 		par.income_u = np.zeros(par.T)				# Empty array to store benefits
