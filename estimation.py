@@ -24,23 +24,23 @@ def updatepar(par, parnames, parvals):
 
 
 
-def method_simulated_moments(model,est_par,theta0, bounds):
+def method_simulated_moments(model,est_par,theta0, bounds, weight):
     # Check the parameters
     assert (len(est_par)==len(theta0)), 'Number of parameters and initial values do not match'
 
     if model.par.full_sample_estimation == True:
             # Estimate
-        obj_fun = lambda x: sum_squared_diff_moments_before_and_after(x,model,est_par)
+        obj_fun = lambda x: sum_squared_diff_moments_before_and_after(x,model,est_par,weight)
         res = minimize(obj_fun,theta0, method='SLSQP', bounds = bounds)
     else:
         # Estimate
-        obj_fun = lambda x: sum_squared_diff_moments(x,model,est_par)
+        obj_fun = lambda x: sum_squared_diff_moments(x,model,est_par,weight)
         res = minimize(obj_fun,theta0, method='SLSQP', bounds = bounds)
 
     return res
 
 
-def sum_squared_diff_moments(theta,model,est_par):
+def sum_squared_diff_moments(theta,model,est_par,weight):
 
     #Update parameters
     par = model.par
@@ -61,14 +61,17 @@ def sum_squared_diff_moments(theta,model,est_par):
 
     diff = (moments-moments_after)
    
-    res = (diff.T @ np.eye(35) @ diff)*100
+    if weight:
+        res = (diff.T @ weight_mat @ diff)*100 #res = (diff.T @ np.linalg.inv(weight_mat) @ diff)*100
+    else:
+        res = (diff.T @ np.eye(35) @ diff)*100
      
     return res
 
 
 
 
-def sum_squared_diff_moments_before_and_after(theta,model,est_par):
+def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight):
 
     #Update parameters
     par = model.par
@@ -87,35 +90,33 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par):
     par.b2 = 171.0/675.0
     model.allocate()
     moments_after_model = model.solve()
-    # print(np.shape(moments_after_model))
 
     model_moments = np.concatenate((moments_before_model, moments_after_model))
-    # print(np.shape(model_moments))
 
-    # rows_before, cols_before = data.vc_controls_before.shape
-    # rows_after, cols_after = data.vc_controls_after.shape
+    rows_before, cols_before = data.vc_controls_before.shape
+    rows_after, cols_after = data.vc_controls_after.shape
 
-    # weight_mat = np.zeros((rows_before + rows_after, cols_before + cols_after))
+    weight_mat = np.zeros((rows_before + rows_after, cols_before + cols_after))
 
-    # weight_mat[:rows_before, :cols_before] =  data.vc_controls_before
-    # weight_mat[rows_after:, cols_after:] = data.vc_controls_after  
+    weight_mat[:rows_before, :cols_before] =  data.vc_controls_before
+    weight_mat[rows_after:, cols_after:] = data.vc_controls_after  
 
     
     moments_before = data.moments_before
     moments_before = moments_before.reshape(35)
-    # print(np.shape(moments_before))
 
     moments_after = data.moments_after
     moments_after = moments_after.reshape(35)
-    # print(np.shape(moments_after))
 
     data_moments = np.concatenate((moments_before, moments_after))
-    # print(np.shape(data_moments))
 
 
     diff = (model_moments-data_moments)
-   
-    res = (diff.T @ np.eye(70) @ diff)*100
+
+    if weight:
+        res = (diff.T @ weight_mat @ diff)*100 #res = (diff.T @ np.linalg.inv(weight_mat) @ diff)*100
+    else:
+        res = (diff.T @ np.eye(70) @ diff)*100
 
     #Set paramters to before reform again
     par.b1 = 222/675*par.w
