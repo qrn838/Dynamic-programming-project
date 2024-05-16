@@ -51,6 +51,7 @@ def value_function_employment(par, sol):
                         if result.success:
                             a_next[i_t, i_n, i_a] = result.x
                             V_e[i_t, i_n, i_a] = -result.fun
+                            c_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - a_next[i_t, i_n, i_a] / par.R
                         else:
                             print(f"Error at t={i_t}, i_n={i_n}, i_a={i_a}")
                             print("Error message:", result.message)
@@ -58,16 +59,17 @@ def value_function_employment(par, sol):
                             print("Optimization result details:", result)
 
                     else:  # EGM
-                        m = par.a_grid[:] + par.w  # Exogenous grid. How much cash on hand you start the next period with
-                        c_next = c_egm[i_t, i_n+1, i_a]
+                        m = par.a_grid[:] + par.w  # Exogenous grid. How much cash on hand you start the period with
+                        c_next_int = interp1d(m,c_egm[i_t, i_n+1,:])
+                        c_next = c_next_int(m_egm[i_t, i_n+1,i_a])
 
-                        marg_util_next = par.delta * par.R * marginal_utility(par, c_next, par.r_e_m[i_t, i_t + i_n + 1])
-                        c1 = inv_marg_utility_1(par, marg_util_next)
-                        c2 = inv_marg_utility_2(par, marg_util_next)
+                        marg_util_next = marginal_utility(par, c_next, par.r_e_m[i_t, i_t + i_n + 1])
+                        c1 = inv_marg_utility_1(par, par.delta * par.R *marg_util_next)
+                        c2 = inv_marg_utility_2(par, par.delta * par.R *marg_util_next)
 
                         m1 = par.a_grid[i_a] / par.R + c1  # Cash on hand needed this period to obtain c and next period assets
                         m2 = par.a_grid[i_a] / par.R + c2 
-
+                      
                         a1 = interp1d(m, par.a_grid, fill_value="extrapolate")(m1)
                         a2 = interp1d(m, par.a_grid, fill_value="extrapolate")(m2)
 
@@ -89,6 +91,8 @@ def value_function_employment(par, sol):
                             m2 = par.L + par.w
                             a2 = interp1d(m, par.a_grid, fill_value="extrapolate")(m2)
                             c2 = m2 - a2 / par.R
+                        
+
 
                         if c1 >= par.r_e_m[i_t, i_t + i_n] and c2 >= par.r_e_m[i_t, i_t + i_n]:
                             c_egm[i_t, i_n, i_a] = c1
@@ -112,7 +116,8 @@ def value_function_employment(par, sol):
                             else:
                                 c_egm[i_t, i_n, i_a] = c2   
                                 m_egm[i_t, i_n, i_a] = m2
-                                a_next[i_t, i_n, i_a] = a2                            
+                                a_next[i_t, i_n, i_a] = a2  
+                          
 
                         V_e[i_t, i_n, i_a] = utility(par, c_egm[i_t, i_n, i_a], par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid, V_e_next[i_t, i_n + 1, :], fill_value="extrapolate")(a_next[i_t, i_n, i_a])
                           # Debug prints
@@ -129,6 +134,7 @@ def value_function_employment(par, sol):
     par.V_e_t_a = V_e[:, 0, :]
     par.V_e = V_e
     sol.a_next_e = a_next
+    sol.c_e = c_egm
 
 
 
@@ -178,7 +184,8 @@ def unemployment_ss(par, t, i_a):
         
         # Generate search intervals dynamically
         factors = [1, 5, 10, 20, 50, 100, 200, 500]
-        search_intervals = [(-factor, 0) for factor in factors] + [(-factor, 1) for factor in factors] + [(-factor, 5) for factor in factors]+ [(-factor, 15) for factor in factors]
+        search_intervals = [(-factor, 0) for factor in factors] + [(-factor, 1) for factor in factors] + [(-factor, 5) for factor in factors]+ [(-factor, 15) for factor in factors]+ [(-factor, -5) for factor in factors]+ [(-factor, -15) for factor in factors] + [(factor, 5) for factor in factors]
+
 
 
         for new_a, new_b in search_intervals:
@@ -223,6 +230,7 @@ def solve_search_and_consumption(par, sol):
                 V_u[t,i_a] = unemployment_ss(par,t, i_a)[0]
                 s[t,i_a] = unemployment_ss(par, t, i_a)[1]
                 a_next[t,i_a] = par.a_grid[i_a]
+                c[t,i_a] = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
             
             else: # Previous periods. Chech that debt converges to par.L before stationary state when solving forward
                 def objective_function_ti(a_next, par,t,V_u_next):
@@ -268,6 +276,7 @@ def solve_search_and_consumption(par, sol):
         
     sol.s = s
     sol.a_next = a_next
+    sol.c = c
 
 
 
@@ -275,6 +284,7 @@ def solve_search_and_consumption(par, sol):
 
 def solve_forward(par, sol, sim):
     s = np.zeros(par.T)
+    c = np.zeros(par.T)
     a_next = np.zeros(par.T)
     # b. solve
     for t in range(par.T):
@@ -282,48 +292,91 @@ def solve_forward(par, sol, sim):
             a = par.A_0
             s[t] = sol.s[t,-1]
             a_next[t] = sol.a_next[t,-1]
+            c[t] = a + par.income_u[t] - a_next[t] / par.R
         else:
             a = a_next[t-1]
             s_interp = interp1d(par.a_grid, sol.s[t, :])
             a_next_interp = interp1d(par.a_grid, sol.a_next[t, :])
             s[t] = s_interp(a)
             a_next[t] = a_next_interp(a)
+            c[t] = a + par.income_u[t] - a_next[t] / par.R
     
     sim.s = s
     sim.a_next = a_next
+    sim.c = c
 
+
+# def solve_forward_employment(par, sol, sim):
+
+#     a_next = np.zeros((par.T, par.N+par.M+1))
+#     # b. solve
+#     for t in range(par.T):
+#         for n in range(par.N+par.M):
+#             if t == 0: # First period
+#                 if n == 0:
+#                     a_next[t, n] = par.A_0
+
+#                 if n == 1:
+#                     a = par.A_0
+#                     a_next[t, n] = sol.a_next_e[t, n, -1]
+#                 else:
+#                     a = a_next[t, n-1]
+#                     a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
+#                     a_next[t, n] = a_next_interp(a)
+#             else:
+#                 if n == 0:
+#                     a = sim.a_next[t-1]
+#                     a_next[t, n] = sim.a_next[t-1]
+
+#                 elif n == 1:
+#                     a = sim.a_next[t-1]
+#                     a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
+#                     a_next[t, n] = a_next_interp(a)
+#                 else:
+#                     a = a_next[t, n-1]
+#                     a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
+#                     a_next[t, n] = a_next_interp(a)
+#     sim.a_e = a_next
 
 def solve_forward_employment(par, sol, sim):
 
-    a_next = np.zeros((par.T, par.N+par.M+1))
+    a_next = np.zeros((par.T, par.N+par.M))
+    c = np.zeros((par.T, par.N+par.M))
     # b. solve
     for t in range(par.T):
         for n in range(par.N+par.M):
             if t == 0: # First period
                 if n == 0:
                     a_next[t, n] = par.A_0
-
+                    c[t, n] = par.A_0 + par.w - a_next[t, n] / par.R
                 if n == 1:
-                    a = par.A_0
+                    a = a_next[t, n-1]
                     a_next[t, n] = sol.a_next_e[t, n, -1]
+                    c[t, n] = a + par.w - a_next[t, n] / par.R
                 else:
                     a = a_next[t, n-1]
                     a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
                     a_next[t, n] = a_next_interp(a)
+                    c[t, n] = a + par.w - a_next[t, n] / par.R
             else:
                 if n == 0:
                     a = sim.a_next[t-1]
-                    a_next[t, n] = sim.a_next[t-1]
-
-                elif n == 1:
-                    a = sim.a_next[t-1]
                     a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
                     a_next[t, n] = a_next_interp(a)
+                    c[t, n] = a + par.w - a_next[t, n] / par.R
+
+                elif n == 1:
+                    a = a_next[t,n-1]
+                    a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
+                    a_next[t, n] = a_next_interp(a)
+                    c[t, n] = a + par.w - a_next[t, n] / par.R
                 else:
                     a = a_next[t, n-1]
                     a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
                     a_next[t, n] = a_next_interp(a)
+                    c[t, n] = a + par.w - a_next[t, n] / par.R
     sim.a_e = a_next
+    sim.c_e = c
 
 
 

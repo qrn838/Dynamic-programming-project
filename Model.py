@@ -41,10 +41,10 @@ class ReferenceDependenceClass(EconModelClass):
 		# Preferences
 		par.eta = 1.0  ### Reference dependence parameter
 		par.sigma = 1.0  ### Lambda in the paper
-		par.delta = 0.999  ### Discount factor
+		par.delta = 0.995  ### Discount factor
 
 		#Savings
-		par.R = 1/par.delta #+ 0.0001   #Interest rate
+		par.R = 1/par.delta + 0.0001   #Interest rate
 		par.A_0 = 0.0  #Initial assets 
 		par.L = -2.0  # borrowing constraint
 
@@ -65,12 +65,16 @@ class ReferenceDependenceClass(EconModelClass):
 
 		sol.s = np.zeros((par.T, par.Na))  # Policy function search effort
 		sol.a_next = np.zeros((par.T, par.Na))  # Policy function savings
+		sol.c = np.zeros((par.T, par.Na))
 
 		sol.a_next_e = np.zeros((par.T, par.N+par.M, par.Na))  # Policy function savings employed
+		sol.c_e = np.zeros((par.T, par.N+par.M, par.Na))
 
 		sim.s = np.zeros(par.T)  # Search effort
+		sim.c = np.zeros(par.T)  # Consumption
 		sim.a = np.zeros(par.T)  # Savings
-		sim.a_e = np.zeros((par.T,par.N+par.M+1))
+		sim.a_e = np.zeros((par.T,par.N+par.M))
+		sim.c_e = np.zeros((par.T,par.N+par.M))
 	
 		
 
