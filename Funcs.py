@@ -16,12 +16,21 @@ def utility(par,c,r):
 
     return u
 
-def marginal_utility(par,c,r):
-    """ marginal utility function """
-    if c>=r:
-       mu = 1/c * (1+par.eta)
-    else:
-       mu = 1/c * (1+par.eta*par.sigma)
+# def marginal_utility(par,c,r):
+#     """ marginal utility function """
+#     if c>=r:
+#        mu = 1/c * (1+par.eta)
+#     else:
+#        mu = 1/c * (1+par.eta*par.sigma)
+
+#     return mu
+
+def marginal_utility(par, c, r):
+    """ Marginal utility function for array c """
+    c = np.array(c)  # Ensure c is a NumPy array
+
+    # Calculate marginal utility
+    mu = np.where(c >= r, 1/c * (1 + par.eta), 1/c * (1 + par.eta * par.sigma))
 
     return mu
 

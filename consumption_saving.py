@@ -9,10 +9,14 @@ from scipy.optimize import bisect
 import numba
 
 from Funcs import *
+def value_function_employment(par, sol):
+    if par.euler == False:
+        value_function_employment_VFI(par, sol)
+    else:
+        value_function_employment_EGM(par, sol)
 
 
-### Value of getting employed ###
-
+########## VFI #########
 def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
     r = par.r_e_m[i_t, i_t + i_n]
     c = par.a_grid[i_a] + par.w - a_next / (par.R)
@@ -20,124 +24,161 @@ def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
     V_e = utility(par, c, r) + par.delta * V_e_next_interp(a_next)
     return -V_e
 
-def value_function_employment(par, sol):
+def value_function_employment_VFI(par, sol):
     """Value function when employed"""
     V_e = np.zeros((par.T, par.N + par.M, par.Na))
-    V_e_next = np.zeros((par.T, par.N + par.M, par.Na))   # M to ensure that we have converged to stationary state. Check this is the case
     a_next = np.zeros((par.T, par.N + par.M, par.Na))
-    a_egm = np.zeros((par.T, par.N + par.M, par.Na))
-    c_egm = np.zeros((par.T, par.N + par.M, par.Na))
+    c = np.zeros((par.T, par.N + par.M, par.Na))
 
     for i_t in range(par.T): 
         for i_n in range(par.N + par.M - 1, -1, -1):
             for i_a in range(par.Na):
                 if i_n == par.N + par.M - 1:  # Stationary state
                     r = par.r_e_m[i_t, i_t + i_n]
-                    c = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
-                    V_e[i_t, i_n, i_a] = utility(par, c, r) / (1 - par.delta)  ## stationary state
+                    c[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
+                    V_e[i_t, i_n, i_a] = utility(par, c[i_t, i_n, i_a], r) / (1 - par.delta)  ## stationary state
                     a_next[i_t, i_n, i_a] = par.a_grid[i_a]
 
-                    a_egm[i_t, i_n, i_a] = par.a_grid[i_a]/par.R + c-par.w
-                    # m_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w
-                    c_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
+                    
+
                 else:  # Consumption saving problem
-                    if not par.euler:  # With optimizer
-                        lower_bound = par.L
-                        upper_bound = (par.a_grid[i_a] + par.w) * par.R - 1e-6  # consumption must be positive
-                        upper_bound = min(upper_bound, par.A_0)
+                    lower_bound = par.L
+                    upper_bound = (par.a_grid[i_a] + par.w) * par.R - 1e-6  # consumption must be positive
+                    upper_bound = min(upper_bound, par.A_0)
 
-                        # Run the optimizer using minimize_scalar with method='golden'
-                        result = minimize_scalar(objective_function, bounds=(lower_bound, upper_bound), args=(par, i_a, i_t, i_n, V_e_next[i_t, i_n + 1, :]), method='bounded')
+                    # Run the optimizer using minimize_scalar with method='golden'
+                    result = minimize_scalar(objective_function, bounds=(lower_bound, upper_bound), args=(par, i_a, i_t, i_n, V_e[i_t, i_n + 1, :]), method='bounded')
 
-                        if result.success:
-                            a_next[i_t, i_n, i_a] = result.x
-                            V_e[i_t, i_n, i_a] = -result.fun
-                            c_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - a_next[i_t, i_n, i_a] / par.R
-                        else:
-                            print(f"Error at t={i_t}, i_n={i_n}, i_a={i_a}")
-                            print("Error message:", result.message)
-                            print("Current function value:", result.fun)
-                            print("Optimization result details:", result)
-
-                    else:  # EGM
-                        a = par.a_grid[:]  # Exogenous grid. How much cash on hand you start the period witt
-                        c_next_int = interp1d(a_egm[i_t, i_n+1,:],c_egm[i_t, i_n+1,:], fill_value='extrapolate')
-                        c_next = c_next_int(par.a_grid[i_a])
-
-                        marg_util_next = marginal_utility(par, c_next, par.r_e_m[i_t, i_t + i_n + 1])
-                        c1 = inv_marg_utility_1(par, par.delta * par.R *marg_util_next)
-                        c2 = inv_marg_utility_2(par, par.delta * par.R *marg_util_next)
-
-                        a1 = par.a_grid[i_a] / par.R + c1 - par.w  # Cash on hand needed this period to obtain c and next period assets
-                        a2 = par.a_grid[i_a] / par.R + c2 - par.w
-
-                        #next period assets as function of current period assets
-                        a1_next = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a1)
-                        a2_next = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a2)
-
-
-                      
-
-                        if a1 > par.A_0:
-                            a1 = par.A_0
-                            c1 = a1 + par.w - par.a_grid[i_a] / par.R
-                            a1_next = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a1)
-
-                        if a2 > par.A_0:
-                            a2 = par.A_0
-                            c2 = a2 + par.w - par.a_grid[i_a] / par.R
-                            a2_next = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a2)
-                         
-                        if a1 < par.L:
-                            a1 = par.L
-                            c1 = a1 + par.w - par.a_grid[i_a] / par.R
-                            a1_next = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a1)
-                        if a2 < par.L:
-                            a2 = par.L
-                            c2 = a2 + par.w - par.a_grid[i_a] / par.R
-                            a2_next = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a2)
-
-
-                        if c1 >= par.r_e_m[i_t, i_t + i_n] and c2 >= par.r_e_m[i_t, i_t + i_n]:
-                            c_egm[i_t, i_n, i_a] = c1
-                            a_egm[i_t, i_n, i_a] = a1_next
-                            
-                        elif  c1 < par.r_e_m[i_t, i_t + i_n] and c2 < par.r_e_m[i_t, i_t + i_n]:
-                            c_egm[i_t, i_n, i_a] = c2
-                            a_egm[i_t, i_n, i_a] = a2_next
-                          
-    
-                        else:
-                            print('Error in EGM at time period', i_t, 'and state', i_n, 'and asset', i_a)
-                            V_e_1 = utility(par, c1, par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid, V_e_next[i_t, i_n + 1, :], fill_value="extrapolate")(a1)
-                            V_e_2 = utility(par, c2, par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid, V_e_next[i_t, i_n + 1, :], fill_value="extrapolate")(a2)
-
-                            if V_e_1 > V_e_2:
-                                c_egm[i_t, i_n, i_a] = c1
-                                a_egm[i_t, i_n, i_a] = a1
-                              
-                            else:
-                                c_egm[i_t, i_n, i_a] = c2   
-                                a_egm[i_t, i_n, i_a] = a2
-                                
-                          
-
-                        V_e[i_t, i_n, i_a] = utility(par, c_egm[i_t, i_n, i_a], par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid, V_e_next[i_t, i_n + 1, :], fill_value="extrapolate")(a_egm[i_t, i_n, i_a])
-                        a_next[i_t, i_n, i_a] = a_egm[i_t, i_n, i_a]
-                          # Debug prints
-                        # print(f"t={i_t}, i_n={i_n}, i_a={i_a}")
-                        # print(f"a_grid={par.a_grid[i_a]}")
-                        # print(f"c1={c1}, c2={c2}")
-                        # print(f"m1={m1}, m2={m2}")
-                        # print(f"a1={a1}, a2={a2}")
-                        # print(f"c_egm={c_egm[i_t, i_n, i_a]}, a_next={a_next[i_t, i_n, i_a]}")
-                        # print(f"V_e={V_e[i_t, i_n, i_a]}")
-
-                V_e_next[i_t, i_n, i_a] = V_e[i_t, i_n, i_a]
+                    if result.success:
+                        a_next[i_t, i_n, i_a] = result.x
+                        V_e[i_t, i_n, i_a] = -result.fun
+                        c[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - a_next[i_t, i_n, i_a] / par.R
+                    else:
+                        print(f"Error at t={i_t}, i_n={i_n}, i_a={i_a}")
+                        print("Error message:", result.message)
+                        print("Current function value:", result.fun)
+                        print("Optimization result details:", result)
+                
+            
 
     par.V_e_t_a = V_e[:, 0, :]
     par.V_e = V_e
     sol.a_next_e = a_next
+    sol.c_e = c
+
+
+
+############## EGM #####################
+
+def value_function_employment_EGM(par, sol):
+    """Value function when employed"""
+    V_e = np.zeros((par.T, par.N + par.M, par.Na))
+    a_next = np.zeros((par.T, par.N + par.M, par.Na))
+    a_egm = np.zeros((par.T, par.N + par.M, par.Na))
+    c_egm = np.zeros((par.T, par.N + par.M, par.Na))
+
+    # for i_t in range(par.T): 
+    #     for i_n in range(par.N + par.M - 1, -1, -1):
+    for i_t in range(par.T):
+        for i_a in range(par.Na):
+            r = par.r_e_m[i_t, -1]
+            c = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
+            V_e[i_t, -1, i_a] = utility(par, c, r) / (1 - par.delta)  ## stationary state
+            a_next[i_t, -1, i_a] = par.a_grid[i_a]
+
+            a_egm[i_t, -1, i_a] = par.a_grid[i_a]/par.R + c - par.w
+            # m_egm[i_t, i_n, i_a] = par.a_grid[i_a] + par.w
+            c_egm[i_t, -1, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
+
+        
+    for i_t in range(par.T):
+        for i_n in range(par.N + par.M - 2, -1, -1):
+            a = par.a_grid  # Exogenous grid
+            c_next_int = interp1d(a_egm[i_t, i_n+1,:],c_egm[i_t, i_n+1,:], fill_value='extrapolate')
+            c_next = c_next_int(par.a_grid)
+
+            marg_util_next = marginal_utility(par, c_next, par.r_e_m[i_t, i_t + i_n + 1])
+            c1 = inv_marg_utility_1(par, par.delta * par.R *marg_util_next)
+            c2 = inv_marg_utility_2(par, par.delta * par.R *marg_util_next)
+
+            a1 = par.a_grid[:] / par.R + c1 - par.w  # Cash on hand needed this period to obtain c and next period assets
+            a2 = par.a_grid[:] / par.R + c2 - par.w
+
+            #next period assets as function of current period assets
+            a1_next = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a1)
+            a2_next = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a2)
+        
+            for i in range(par.Na):
+                if a1[i] > par.A_0:
+                    a1[i] = par.A_0
+                    c1[i] = a1[i] + par.w - par.a_grid[i] / par.R
+                    a1_next[i] = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a1[i])
+
+                if a2[i] > par.A_0:
+                    a2[i] = par.A_0
+                    c2[i] = a2[i] + par.w - par.a_grid[i] / par.R
+                    a2_next[i] = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a2[i])
+                    
+                if a1[i] < par.L:
+                    a1[i] = par.L
+                    c1[i] = a1[i] + par.w - par.a_grid[i] / par.R
+                    a1_next[i] = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a1[i])
+                if a2[i] < par.L:
+                    a2[i] = par.L
+                    c2[i] = a2[i] + par.w - par.a_grid[i] / par.R
+                    a2_next[i] = interp1d(par.a_grid, a_egm[i_t, i_n + 1, :], fill_value="extrapolate")(a2[i])
+
+
+            # a1_next = interp1d(a1, par.a_grid, fill_value="extrapolate")(par.a_grid)
+            # a2_next = interp1d(a2, par.a_grid, fill_value="extrapolate")(par.a_grid)
+            # print(a1_next)
+
+            for i in range(par.Na):
+                
+                if c1[i] >= par.r_e_m[i_t, i_t + i_n] and c2[i] >= par.r_e_m[i_t, i_t + i_n]:
+                    c_egm[i_t, i_n, i] = c1[i]
+                    a_egm[i_t, i_n, i] = a1_next[i]
+                    # a_egm[i_t, i_n, i] = a1[i]
+                    
+                    
+                elif  c1[i] < par.r_e_m[i_t, i_t + i_n] and c2[i] < par.r_e_m[i_t, i_t + i_n]:
+                    c_egm[i_t, i_n, i] = c2[i]
+                    a_egm[i_t, i_n, i] = a2_next[i]
+                    # a_egm[i_t, i_n, i] = a2[i]
+                    
+            
+                else:
+                    print('Error in EGM at time period', i_t, 'and state', i_n, 'and asset', i)
+                    V_e_1 = utility(par, c1[i], par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid, V_e[i_t, i_n + 1, :], fill_value="extrapolate")(a1[i])
+                    V_e_2 = utility(par, c2[i], par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid, V_e[i_t, i_n + 1, :], fill_value="extrapolate")(a2[i])
+
+                    if V_e_1 > V_e_2:
+                        c_egm[i_t, i_n, i] = c1[i]
+                        a_egm[i_t, i_n, i] = a1[i]
+                        # a_next[i_t, i_n, i] = a1_next[i]
+                    
+                    else:
+                        c_egm[i_t, i_n, i] = c2[i] 
+                        a_egm[i_t, i_n, i] = a2[i]
+                        # a_next[i_t, i_n, i]= a2_next[i]
+                        
+                
+
+                V_e[i_t, i_n, i] = utility(par, c_egm[i_t, i_n, i], par.r_e_m[i_t, i_t + i_n]) + par.delta * interp1d(par.a_grid, V_e[i_t, i_n + 1, :], fill_value="extrapolate")(a_egm[i_t, i_n, i])
+                a_next[i_t, i_n, i] = a_egm[i_t, i_n, i]
+                    # Debug prints
+                # print(f"t={i_t}, i_n={i_n}, i_a={i_a}")
+                # print(f"a_grid={par.a_grid[i_a]}")
+                # print(f"c1={c1}, c2={c2}")
+                # print(f"m1={m1}, m2={m2}")
+                # print(f"a1={a1}, a2={a2}")
+                # print(f"c_egm={c_egm[i_t, i_n, i_a]}, a_next={a_next[i_t, i_n, i_a]}")
+                # print(f"V_e={V_e[i_t, i_n, i_a]}")
+
+
+    par.V_e_t_a = V_e[:, 0, :]
+    par.V_e = V_e
+    sol.a_next_e = a_egm
     sol.c_e = c_egm
 
 
