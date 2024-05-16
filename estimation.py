@@ -57,7 +57,7 @@ def sum_squared_diff_moments(theta,model,est_par,weight):
     
     moments_after = data.moments_before
     # print(np.shape(moments_after))
-    moments_after = moments_after.reshape(35)
+    moments_after = moments_after.reshape(36)
 
     diff = (moments-moments_after)
    
