@@ -2,12 +2,22 @@ import numpy as np
 
 
 def consumption_utility(x):
-	v = np.log(x)
-	return v
+    """ utility of consumption
+     Args:
+        x (float): consumption
+    Returns:
+        float: utility of consumption"""
+    v = np.log(x)
+    return v
 
 
 def utility(par,c,r):
-    """ utility function """
+    """ utility function
+     Args:
+        c (float): consumption
+        r (float): reference consumption
+    Returns:
+        float: utility"""
 	# a. utility
     if c>=r:
        u = consumption_utility(c) + par.eta*(consumption_utility(c)-consumption_utility(r))
@@ -26,12 +36,12 @@ def marginal_utility(par,c,r):
     return mu
 
 def inv_marg_utility_1(par,c):
-    """ inverse marginal utility function """
+    """ inverse marginal utility function when above reference point, c>=r"""
     inv_mu = 1/c * (1+par.eta)
     return inv_mu
 
 def inv_marg_utility_2(par,c):
-    """ inverse marginal utility function """
+    """ inverse marginal utility function when below reference point, c<r"""
     inv_mu = 1/c * (1+par.eta*par.sigma)
     return inv_mu
   

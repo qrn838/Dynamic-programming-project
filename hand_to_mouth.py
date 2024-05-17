@@ -92,14 +92,14 @@ def unemployed_ss(par):
 
 def solve_search_effort(par):
     # a. allocate
-    s = np.zeros(par.T)
-    V_u = np.zeros(par.T)
+    s = np.zeros(par.T)     # Policy function search effort
+    V_u = np.zeros(par.T)   # Value function unemployed
 
     # b. solve
     for t in range(par.T-1 , -1, -1):
-        if t == par.T-1 : 
-            s[t]=unemployed_ss(par)[0]
-            V_u[t]=unemployed_ss(par)[1]
+        if t == par.T-1 :   # Last period
+            s[t]=unemployed_ss(par)[0]    # Search effort in steady state
+            V_u[t]=unemployed_ss(par)[1]  # Value function in steady state
         
         else:
             V_e_next = value_function_employment(par, par.w, t+1)
