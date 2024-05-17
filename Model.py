@@ -26,23 +26,23 @@ class ReferenceDependenceClass(EconModelClass):
 		data = self.data
 		# Data
 		# get the data
-		data.data = loadmat('Data/Moments_hazard.mat')
+		# data.data = loadmat('Data/Moments_hazard.mat')
 
-		# Access the 'Moments' table
-		data.moments = data.data['Moments']
-		# Determine the number of elements in moments_table
-		data.num_elements = data.moments.shape[0]
+		# # Access the 'Moments' table
+		# data.moments = data.data['Moments']
+		# # Determine the number of elements in moments_table
+		# data.num_elements = data.moments.shape[0]
 
-		# Calculate the number of elements to include in moments_before
-		data.num_elements_before = data.num_elements // 2
-		# Create moments_before containing exactly half the elements in moments_table
-		data.moments_before = data.moments[1:data.num_elements_before]
-		data.moments_after = data.moments[data.num_elements_before+1:]
+		# # Calculate the number of elements to include in moments_before
+		# data.num_elements_before = data.num_elements // 2
+		# # Create moments_before containing exactly half the elements in moments_table
+		# data.moments_before = data.moments[1:data.num_elements_before]
+		# data.moments_after = data.moments[data.num_elements_before+1:]
 
-		# Access the 'VCcontrols' table
-		data.vc_controls = data.data['VCcontrol']
-		data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
-		data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
+		# # Access the 'VCcontrols' table
+		# data.vc_controls = data.data['VCcontrol']
+		# data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
+		# data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
 				
 
 
@@ -61,7 +61,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.T = par.T1 + par.T2 + par.T3 + par.N + par.M #Total number of periods
 		par.T_sim = 35 #Number of periods in the simulation
 
-		par.Na = 20  #Number of grid points for savings
+		
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
@@ -73,13 +73,14 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# Preferences
 		par.eta = 1.0  ### Reference dependence parameter
-		par.sigma = 4.15  ### Lambda in the paper
+		par.sigma = 2.23  ### Lambda in the paper
 		par.delta = 0.995  ### Discount factor
 
 		#Savings
 		par.R = 1/par.delta + 0.0001   #Interest rate
 		par.A_0 = 0.0  #Initial assets 
 		par.L = -2.0  # borrowing constraint
+		par.Na = 20  #Number of grid points for savings
 
 
 		# EGM does not give the same as VFI if R is not 1/delta, if eta is different from zero, or if sigma is different from 1
@@ -98,16 +99,16 @@ class ReferenceDependenceClass(EconModelClass):
 
 
 
-		par.cost1 = 2.47
-		par.cost2 = 90.9
+		par.cost1 = 107.0
+		par.cost2 = 310
 		par.cost3 = 570.0
-		par.gamma = 0.354
+		par.gamma = 0.06
 
 
-		par.types = 2
+		par.types = 1
 
 		
-		par.type_shares1 = 0.112
+		par.type_shares1 = 1.0
 		par.type_shares3 = 0.0
 	
 		

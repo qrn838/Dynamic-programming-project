@@ -228,23 +228,18 @@ def unemployment_ss(par, t, i_a, type):
         interval_found = False
 
         # Generate search intervals dynamically with both positive and negative factors
-        factors = [1, 5, 10, 20, 50, 100, 200, 500]
-        search_intervals = []
+        factors = [-100, -50, -20, -10, -5, -1, 0, 1, 5, 10, 20, 50, 100, 200, 500]
         for factor_a in factors:
             for factor_b in factors:
-                search_intervals.extend([
-                    (-factor_a, -factor_b), (-factor_a, 0), (-factor_a, 1), (-factor_a, 5), (-factor_a, 15), (-factor_a, -5), (-factor_a, -15),
-                    (factor_a, -factor_b), (factor_a, 0), (factor_a, 1), (factor_a, 5), (factor_a, 15), (factor_a, -5), (factor_a, -15),
-                    (0, -factor_b), (1, -factor_b), (5, -factor_b), (15, -factor_b), (-5, -factor_b), (-15, -factor_b),
-                ])
+                fa = bellman_difference(factor_a)
+                fb = bellman_difference(factor_b)
+                if fa * fb < 0:
+                    a, b = factor_a, factor_b
+                    interval_found = True
+                    break
 
-        for new_a, new_b in search_intervals:
-            fa = bellman_difference(new_a)
-            fb = bellman_difference(new_b)
-            if fa * fb < 0:
-                a, b = new_a, new_b
-                interval_found = True
-                break
+    
+    
 
         if not interval_found:
             raise ValueError("Could not find a valid interval where the function has different signs.")
