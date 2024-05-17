@@ -213,7 +213,7 @@ def unemployment_ss(par, t, i_a, type):
     r = par.r_u[t]
 
     def bellman_difference(V_u):
-        s = inv_marg_cost(par.delta * (V_e - V_u))[type]
+        s = inv_marg_cost(par, par.delta * (V_e - V_u))[type]
         V_u_new = utility(par, c, r) - cost(par, s)[type] + par.delta * (s * V_e + (1 - s) * V_u)
         return V_u_new - V_u
 
@@ -250,7 +250,7 @@ def unemployment_ss(par, t, i_a, type):
 
     # Perform the root finding
     V_u = brentq(bellman_difference, a, b)
-    s = inv_marg_cost(par.delta * (V_e - V_u))[type]
+    s = inv_marg_cost(par, par.delta * (V_e - V_u))[type]
 
     return V_u, s
 
@@ -277,6 +277,7 @@ def solve_search_and_consumption(par, sol):
                 if t == par.T - 1:   # Stationary state
                     V_u[type,t,i_a] = unemployment_ss(par, t, i_a, type)[0]
                     s[type,t,i_a] = unemployment_ss(par, t, i_a, type)[1]
+                    print(V_u[type,t,i_a])
                     a_next[type,t,i_a] = par.a_grid[i_a]
                     c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
                 
@@ -290,7 +291,7 @@ def solve_search_and_consumption(par, sol):
                         V_e_next = V_e_next_interp(a_next)
                         V_u_next_interp = interp1d(par.a_grid, V_u_next)
                         V_u_next = V_u_next_interp(a_next)
-                        s = inv_marg_cost(par.delta*(V_e_next-V_u_next))
+                        s = inv_marg_cost(par, par.delta*(V_e_next-V_u_next))
                         V_u = utility(par,c,r) - cost(s) + par.delta * (s * V_e_next+(1-s)*V_u_next)
                         return -V_u
             
@@ -311,7 +312,7 @@ def solve_search_and_consumption(par, sol):
                         V_e_next = V_e_next_interp(a_next[type, t,i_a])
                         V_u_next_interp = interp1d(par.a_grid, V_u_next[type,t+1,:])
                         V_u_next_int = V_u_next_interp(a_next[type,t, i_a])
-                        s[type,t,i_a] = inv_marg_cost(par.delta*(V_e_next-V_u_next_int))
+                        s[type,t,i_a] = inv_marg_cost(par, par.delta*(V_e_next-V_u_next_int))
                         c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[type,t,i_a] / (par.R)
                 
                     else:

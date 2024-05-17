@@ -22,26 +22,26 @@ class ReferenceDependenceClass(EconModelClass):
 		sol = self.sol
 		sim = self.sim
 
-		data = self.data
-		# Data
-		# get the data
-		data.data = loadmat('Data/Moments_hazard.mat')
+		# data = self.data
+		# # Data
+		# # get the data
+		# data.data = loadmat('Data/Moments_hazard.mat')
 
-		# Access the 'Moments' table
-		data.moments = data.data['Moments']
-		# Determine the number of elements in moments_table
-		data.num_elements = data.moments.shape[0]
+		# # Access the 'Moments' table
+		# data.moments = data.data['Moments']
+		# # Determine the number of elements in moments_table
+		# data.num_elements = data.moments.shape[0]
 
-		# Calculate the number of elements to include in moments_before
-		data.num_elements_before = data.num_elements // 2
-		# Create moments_before containing exactly half the elements in moments_table
-		data.moments_before = data.moments[1:data.num_elements_before]
-		data.moments_after = data.moments[data.num_elements_before+1:]
+		# # Calculate the number of elements to include in moments_before
+		# data.num_elements_before = data.num_elements // 2
+		# # Create moments_before containing exactly half the elements in moments_table
+		# data.moments_before = data.moments[1:data.num_elements_before]
+		# data.moments_after = data.moments[data.num_elements_before+1:]
 
-		# Access the 'VCcontrols' table
-		data.vc_controls = data.data['VCcontrol']
-		data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
-		data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
+		# # Access the 'VCcontrols' table
+		# data.vc_controls = data.data['VCcontrol']
+		# data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
+		# data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
 				
 
 
@@ -49,7 +49,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.full_sample_estimation = False
 
 		# a. model
-		par.euler = True  # Euler equation or optimizer
+		par.euler = False  # Euler equation or optimizer
   		
 		par.N = 10 #Number of reference periods
 		par.M = 10 #Number of ekstra periods to reach stationary state
@@ -93,20 +93,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nactions = 1 # number of actions (Search effort)
 
 
-		sol.s = np.zeros((par.types, par.T, par.Na))  # Policy function search effort
-		sol.a_next = np.zeros((par.types, par.T, par.Na))  # Policy function savings
-		sol.c = np.zeros((par.types, par.T, par.Na))
 
-		sol.a_next_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))  # Policy function savings employed
-		sol.c_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))
-
-		sim.s = np.zeros(par.types, par.T)  # Search effort
-		sim.c = np.zeros(par.types, par.T)  # Consumption
-		sim.a = np.zeros(par.types, par.T)  # Savings
-		sim.a_e = np.zeros((par.types, par.T,par.N+par.M))
-		sim.c_e = np.zeros((par.types, par.T,par.N+par.M))
-
-		sim.s_total = np.zeros(par.T)  # Total search effort
 
 		par.cost1 = 107.0
 		par.cost2 = 310.4
@@ -114,7 +101,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.gamma = 0.06
 
 
-		par.types = 3
+		par.types = 1
 
 		
 		par.type_shares1 = 0.17
@@ -127,6 +114,8 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# a. unpack
 		par = self.par
+		sol = self.sol
+		sim = self.sim
 		
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 
@@ -179,8 +168,22 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# Container for value functions
 		par.V_e_t_a = np.zeros((par.types, par.T, par.Na))
-		par.V_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))	
+		par.V_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))
 
+		sol.s = np.zeros((par.types, par.T, par.Na))  # Policy function search effort
+		sol.a_next = np.zeros((par.types, par.T, par.Na))  # Policy function savings
+		sol.c = np.zeros((par.types, par.T, par.Na))
+
+		sol.a_next_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))  # Policy function savings employed
+		sol.c_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))
+
+		sim.s = np.zeros((par.types, par.T))  # Search effort
+		sim.c = np.zeros((par.types, par.T)) # Consumption
+		sim.a = np.zeros((par.types, par.T))  # Savings
+		sim.a_e = np.zeros((par.types, par.T,par.N+par.M))
+		sim.c_e = np.zeros((par.types, par.T,par.N+par.M))
+
+		sim.s_total = np.zeros(par.T)  # Total search effort
 
 		# b. states
 		par.Nstates = par.Nstates_dynamic + par.Nstates_fixed # number of states
@@ -188,6 +191,9 @@ class ReferenceDependenceClass(EconModelClass):
 
 		par.Nstates_t = par.T # number of auxiliary states
 		par.Nstates_pd_t = par.T # number of auxiliary post-decision states
+
+
+		
 		
 
 	def solve(self):
