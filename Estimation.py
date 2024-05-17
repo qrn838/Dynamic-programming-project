@@ -45,12 +45,14 @@ def sum_squared_diff_moments(theta,model,est_par,weight):
     #Update parameters
     par = model.par
     data = model.data
+    sim = model.sim
     par = updatepar(par,est_par,theta)
 
 
     # Solve the model before
     model.allocate()
-    moments =  model.solve() 
+    model.solve()
+    moments = sim.s_total
     
     # Objective function
     weight_mat = data.vc_controls_before   
@@ -82,14 +84,16 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight):
     par.b1 = 222/675*par.w
     par.b2 = par.b1
     model.allocate()
-    moments_before_model =  model.solve() 
+    model.solve() 
+    moments_before_model = model.sim.s_total
     # print(np.shape(moments_before_model))
 
     # Solve model after
     par.b1 = 342.0/675.0
     par.b2 = 171.0/675.0
     model.allocate()
-    moments_after_model = model.solve()
+    model.solve()
+    moments_after_model = model.sim.s_total
 
     model_moments = np.concatenate((moments_before_model, moments_after_model))
 

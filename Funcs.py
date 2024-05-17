@@ -77,4 +77,5 @@ def inv_marg_cost(par, s):
     inv_c_marg[0] = (s/par.cost1)**(1/par.gamma)
     inv_c_marg[1] = (s/par.cost2)**(1/par.gamma)
     inv_c_marg[2] = (s/par.cost3)**(1/par.gamma)
+
     return inv_c_marg

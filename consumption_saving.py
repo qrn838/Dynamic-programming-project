@@ -207,6 +207,7 @@ def value_function_employment_EGM(par, sol):
 
 #     return V_u,s
 
+
 def unemployment_ss(par, t, i_a, type):
     V_e = par.V_e_t_a[type, t, i_a]
     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
@@ -221,28 +222,28 @@ def unemployment_ss(par, t, i_a, type):
     a, b = -1, 1
     fa = bellman_difference(a)
     fb = bellman_difference(b)
-    print(f"bellman_difference({a}) = {fa}")
-    print(f"bellman_difference({b}) = {fb}")
 
     # If the initial interval does not work, try finding a suitable interval by expanding
     if fa * fb > 0:
-        print("The function does not have different signs at the endpoints. Trying to find a valid interval...")
         interval_found = False
-        
-        # Generate search intervals dynamically
+
+        # Generate search intervals dynamically with both positive and negative factors
         factors = [1, 5, 10, 20, 50, 100, 200, 500]
-        search_intervals = [(-factor, 0) for factor in factors] + [(-factor, 1) for factor in factors] + [(-factor, 5) for factor in factors]+ [(-factor, 15) for factor in factors]+ [(-factor, -5) for factor in factors]+ [(-factor, -15) for factor in factors] + [(factor, 5) for factor in factors]
-
-
+        search_intervals = []
+        for factor_a in factors:
+            for factor_b in factors:
+                search_intervals.extend([
+                    (-factor_a, -factor_b), (-factor_a, 0), (-factor_a, 1), (-factor_a, 5), (-factor_a, 15), (-factor_a, -5), (-factor_a, -15),
+                    (factor_a, -factor_b), (factor_a, 0), (factor_a, 1), (factor_a, 5), (factor_a, 15), (factor_a, -5), (factor_a, -15),
+                    (0, -factor_b), (1, -factor_b), (5, -factor_b), (15, -factor_b), (-5, -factor_b), (-15, -factor_b),
+                ])
 
         for new_a, new_b in search_intervals:
             fa = bellman_difference(new_a)
             fb = bellman_difference(new_b)
-            print(f"Trying interval [{new_a}, {new_b}] with function values {fa}, {fb}")
             if fa * fb < 0:
                 a, b = new_a, new_b
                 interval_found = True
-                print(f"Found valid interval: [{a}, {b}] with function values {fa}, {fb}")
                 break
 
         if not interval_found:
@@ -257,6 +258,7 @@ def unemployment_ss(par, t, i_a, type):
 
 
 
+
 ### Backward Induction to solve search effort in all periods of unemployment ###
 
 def solve_search_and_consumption(par, sol):
@@ -264,7 +266,7 @@ def solve_search_and_consumption(par, sol):
     tuple = (par.types, par.T, par.Na)
     s = np.zeros(tuple)
     V_u = np.zeros(tuple)
-    V_u_next = np.zeros(tuple)
+ 
 
     c = np.zeros(tuple)
     a_next = np.zeros(tuple)
@@ -277,12 +279,11 @@ def solve_search_and_consumption(par, sol):
                 if t == par.T - 1:   # Stationary state
                     V_u[type,t,i_a] = unemployment_ss(par, t, i_a, type)[0]
                     s[type,t,i_a] = unemployment_ss(par, t, i_a, type)[1]
-                    print(V_u[type,t,i_a])
                     a_next[type,t,i_a] = par.a_grid[i_a]
                     c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
                 
                 else: # Previous periods. Chech that debt converges to par.L before stationary state when solving forward
-                    def objective_function_ti(a_next, par,t,V_u_next):
+                    def objective_function_ti(a_next, par,t,V_u_next, type):
                         
                         income = par.income_u[t]
                         r = par.r_u[t]
@@ -291,15 +292,18 @@ def solve_search_and_consumption(par, sol):
                         V_e_next = V_e_next_interp(a_next)
                         V_u_next_interp = interp1d(par.a_grid, V_u_next)
                         V_u_next = V_u_next_interp(a_next)
-                        s = inv_marg_cost(par, par.delta*(V_e_next-V_u_next))
-                        V_u = utility(par,c,r) - cost(s) + par.delta * (s * V_e_next+(1-s)*V_u_next)
+                        s = inv_marg_cost(par, par.delta*(V_e_next-V_u_next))[type]
+                        if s > 1:
+                            print('obj.s')
+                            print(s)
+                        V_u = utility(par,c,r) - cost(par,s)[type] + par.delta * (s * V_e_next+(1-s)*V_u_next)
                         return -V_u
             
 
                     lower_bound = par.L
                     upper_bound = (par.a_grid[i_a] + par.income_u[t])*par.R - 10e-6
                     upper_bound = min(upper_bound, par.A_0)
-                    result = minimize_scalar(objective_function_ti, bounds=(lower_bound, upper_bound), args=(par, t, V_u_next[:, t+1,:]), method='bounded')
+                    result = minimize_scalar(objective_function_ti, bounds=(lower_bound, upper_bound), args=(par, t, V_u[type, t+1,:], type), method='bounded')
 
                                 
                     # Extract optimal a_next
@@ -310,18 +314,21 @@ def solve_search_and_consumption(par, sol):
                         
                         V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[type,t+1, :])
                         V_e_next = V_e_next_interp(a_next[type, t,i_a])
-                        V_u_next_interp = interp1d(par.a_grid, V_u_next[type,t+1,:])
-                        V_u_next_int = V_u_next_interp(a_next[type,t, i_a])
-                        s[type,t,i_a] = inv_marg_cost(par, par.delta*(V_e_next-V_u_next_int))
+                        V_u_next_interp = interp1d(par.a_grid, V_u[type,t+1,:])
+                        V_u_next = V_u_next_interp(a_next[type,t, i_a])
+                        s[type,t,i_a] = inv_marg_cost(par, par.delta*(V_e_next-V_u_next))[type]
+                        if s[type,t,i_a] > 1:
+                            print('sol.s')
+                            print(s[type,t,i_a])
+                       
                         c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[type,t,i_a] / (par.R)
+                        
                 
                     else:
                         print("Error at t={}, i_a={}".format(t, i_a))
                         print("Error message:", result.message)
                         print("Current function value:", result.fun)
                         print("Optimization result details:", result)
-
-                V_u_next[type,t,i_a] = V_u[type,t,i_a]
         
     sol.s = s
     sol.a_next = a_next
@@ -354,10 +361,14 @@ def solve_forward(par, sol, sim, type):
     sim.a_next[type,:] = a_next
     sim.c[type,:] = c
 
+
+
+
 def sim_search_effort(par, sol, sim):
     s = np.zeros(par.T)
 
     type_shares = [par.type_shares1, par.type_shares2, par.type_shares3]
+    type_shares = type_shares[:par.types]
 
     for i in range(par.types):
         solve_forward(par, sol, sim, i)
@@ -371,6 +382,8 @@ def sim_search_effort(par, sol, sim):
             s[t] = type_shares @ sim.s[:,t]
     
     sim.s_total[:] = s[:par.T_sim]
+
+
 
 
 # def solve_forward_employment(par, sol, sim):
@@ -405,6 +418,7 @@ def sim_search_effort(par, sol, sim):
 #                     a_next[t, n] = a_next_interp(a)
 #     sim.a_e = a_next
 
+###########  Not made with types yet  ##############
 def solve_forward_employment(par, sol, sim):
 
     a_next = np.zeros((par.T, par.N+par.M))

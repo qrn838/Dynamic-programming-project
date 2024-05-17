@@ -13,7 +13,7 @@ class ReferenceDependenceClass(EconModelClass):
 	def settings(self):
 		""" basic settings """
 		
-		self.namespaces = ['par', 'sol','sim'] # must be numba-able
+		self.namespaces = ['par', 'sol','sim', 'data'] # must be numba-able
 		#self.other_attrs = [] 
 
 	def setup(self):
@@ -21,27 +21,28 @@ class ReferenceDependenceClass(EconModelClass):
 		par = self.par
 		sol = self.sol
 		sim = self.sim
+		data = self.data
 
-		# data = self.data
-		# # Data
-		# # get the data
-		# data.data = loadmat('Data/Moments_hazard.mat')
+		data = self.data
+		# Data
+		# get the data
+		data.data = loadmat('Data/Moments_hazard.mat')
 
-		# # Access the 'Moments' table
-		# data.moments = data.data['Moments']
-		# # Determine the number of elements in moments_table
-		# data.num_elements = data.moments.shape[0]
+		# Access the 'Moments' table
+		data.moments = data.data['Moments']
+		# Determine the number of elements in moments_table
+		data.num_elements = data.moments.shape[0]
 
-		# # Calculate the number of elements to include in moments_before
-		# data.num_elements_before = data.num_elements // 2
-		# # Create moments_before containing exactly half the elements in moments_table
-		# data.moments_before = data.moments[1:data.num_elements_before]
-		# data.moments_after = data.moments[data.num_elements_before+1:]
+		# Calculate the number of elements to include in moments_before
+		data.num_elements_before = data.num_elements // 2
+		# Create moments_before containing exactly half the elements in moments_table
+		data.moments_before = data.moments[1:data.num_elements_before]
+		data.moments_after = data.moments[data.num_elements_before+1:]
 
-		# # Access the 'VCcontrols' table
-		# data.vc_controls = data.data['VCcontrol']
-		# data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
-		# data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
+		# Access the 'VCcontrols' table
+		data.vc_controls = data.data['VCcontrol']
+		data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
+		data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
 				
 
 
@@ -54,27 +55,29 @@ class ReferenceDependenceClass(EconModelClass):
 		par.N = 10 #Number of reference periods
 		par.M = 10 #Number of ekstra periods to reach stationary state
 		# Transfers Structure
-		par.T1 = 10   #Time with high transfers
-		par.T2 = 10   #Time with medium transfers
-		par.T3 = par.N+1 #Time with low transfers
-		par.T = par.T1 + par.T2 + par.T3 + par.M #Total number of periods
+		par.T1 = 6   #Time with high transfers
+		par.T2 = 12   #Time with medium transfers
+		par.T3 = 6 #Time with low transfers
+		par.T = par.T1 + par.T2 + par.T3 + par.N + par.M #Total number of periods
 		par.T_sim = 35 #Number of periods in the simulation
 
 		par.Na = 20  #Number of grid points for savings
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
-		par.b1 = 0.7*par.w    # High transfers
-		par.b2 = 0.5*par.w    # Medium transfers
-		par.b3 = 0.4*par.w    # Low transfers
+		par.welfare = 90/675
+
+		par.b1 = 222/675*par.w    # High transfers
+		par.b2 = par.b1    # Medium transfers
+		par.b3 = 114/675*par.w    # Low transfers
 
 		# Preferences
 		par.eta = 1.0  ### Reference dependence parameter
-		par.sigma = 1.0  ### Lambda in the paper
+		par.sigma = 4.15  ### Lambda in the paper
 		par.delta = 0.995  ### Discount factor
 
 		#Savings
-		par.R = 1/par.delta    #Interest rate
+		par.R = 1/par.delta + 0.0001   #Interest rate
 		par.A_0 = 0.0  #Initial assets 
 		par.L = -2.0  # borrowing constraint
 
@@ -95,16 +98,16 @@ class ReferenceDependenceClass(EconModelClass):
 
 
 
-		par.cost1 = 107.0
-		par.cost2 = 310.4
+		par.cost1 = 2.47
+		par.cost2 = 90.9
 		par.cost3 = 570.0
-		par.gamma = 0.06
+		par.gamma = 0.354
 
 
-		par.types = 1
+		par.types = 2
 
 		
-		par.type_shares1 = 0.17
+		par.type_shares1 = 0.112
 		par.type_shares3 = 0.0
 	
 		
@@ -178,12 +181,13 @@ class ReferenceDependenceClass(EconModelClass):
 		sol.c_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))
 
 		sim.s = np.zeros((par.types, par.T))  # Search effort
+		sim.a_next = np.zeros((par.types, par.T))  # Savings
 		sim.c = np.zeros((par.types, par.T)) # Consumption
 		sim.a = np.zeros((par.types, par.T))  # Savings
 		sim.a_e = np.zeros((par.types, par.T,par.N+par.M))
 		sim.c_e = np.zeros((par.types, par.T,par.N+par.M))
 
-		sim.s_total = np.zeros(par.T)  # Total search effort
+		sim.s_total = np.zeros(par.T_sim)  # Total search effort
 
 		# b. states
 		par.Nstates = par.Nstates_dynamic + par.Nstates_fixed # number of states
