@@ -45,11 +45,36 @@ def inv_marg_utility_2(par,c):
     return inv_mu
   
 
-def cost(s):
-	""" cost function """
-	return 5*s**2
+# def cost(s):
+# 	""" cost function """
+# 	return 5*s**2
 
 
-def inv_marg_cost(x):
-    """ inverse marginal cost function """
-    return 1/10*x
+# def inv_marg_cost(x):
+#     """ inverse marginal cost function """
+#     return 1/10*x
+
+def cost(par,s):
+    """ cost from seaching function"""
+    c = np.zeros(3)
+    c[0] = par.cost1*s**(1+par.gamma)/(1+par.gamma)
+    c[1] = par.cost2*s**(1+par.gamma)/(1+par.gamma)
+    c[2] = par.cost3*s**(1+par.gamma)/(1+par.gamma)
+    
+    return c
+
+def marg_cost(par,s):
+    """ marginal cost from seaching function"""
+    c_marg = np.zeros(3)
+    c_marg[0] = par.cost1*s**(par.gamma)
+    c_marg[1] = par.cost2*s**(par.gamma)
+    c_marg[2] = par.cost3*s**(par.gamma)
+    return c_marg
+
+def inv_marg_cost(par, s):
+    """ inverse marginal cost from seaching function"""
+    inv_c_marg = np.zeros(3)
+    inv_c_marg[0] = (s/par.cost1)**(1/par.gamma)
+    inv_c_marg[1] = (s/par.cost2)**(1/par.gamma)
+    inv_c_marg[2] = (s/par.cost3)**(1/par.gamma)
+    return inv_c_marg

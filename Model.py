@@ -2,8 +2,10 @@ from types import SimpleNamespace
 import numpy as np
 import scipy
 from copy import deepcopy
+from scipy.io import loadmat
 
 from EconModel import EconModelClass
+from consumption_saving import *
 
 
 class ReferenceDependenceClass(EconModelClass):
@@ -19,6 +21,33 @@ class ReferenceDependenceClass(EconModelClass):
 		par = self.par
 		sol = self.sol
 		sim = self.sim
+
+		data = self.data
+		# Data
+		# get the data
+		data.data = loadmat('Data/Moments_hazard.mat')
+
+		# Access the 'Moments' table
+		data.moments = data.data['Moments']
+		# Determine the number of elements in moments_table
+		data.num_elements = data.moments.shape[0]
+
+		# Calculate the number of elements to include in moments_before
+		data.num_elements_before = data.num_elements // 2
+		# Create moments_before containing exactly half the elements in moments_table
+		data.moments_before = data.moments[1:data.num_elements_before]
+		data.moments_after = data.moments[data.num_elements_before+1:]
+
+		# Access the 'VCcontrols' table
+		data.vc_controls = data.data['VCcontrol']
+		data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
+		data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
+				
+
+
+		# model
+		par.full_sample_estimation = False
+
 		# a. model
 		par.euler = True  # Euler equation or optimizer
   		
@@ -29,6 +58,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.T2 = 10   #Time with medium transfers
 		par.T3 = par.N+1 #Time with low transfers
 		par.T = par.T1 + par.T2 + par.T3 + par.M #Total number of periods
+		par.T_sim = 35 #Number of periods in the simulation
 
 		par.Na = 20  #Number of grid points for savings
 		
@@ -63,18 +93,32 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nactions = 1 # number of actions (Search effort)
 
 
-		sol.s = np.zeros((par.T, par.Na))  # Policy function search effort
-		sol.a_next = np.zeros((par.T, par.Na))  # Policy function savings
-		sol.c = np.zeros((par.T, par.Na))
+		sol.s = np.zeros((par.types, par.T, par.Na))  # Policy function search effort
+		sol.a_next = np.zeros((par.types, par.T, par.Na))  # Policy function savings
+		sol.c = np.zeros((par.types, par.T, par.Na))
 
-		sol.a_next_e = np.zeros((par.T, par.N+par.M, par.Na))  # Policy function savings employed
-		sol.c_e = np.zeros((par.T, par.N+par.M, par.Na))
+		sol.a_next_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))  # Policy function savings employed
+		sol.c_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))
 
-		sim.s = np.zeros(par.T)  # Search effort
-		sim.c = np.zeros(par.T)  # Consumption
-		sim.a = np.zeros(par.T)  # Savings
-		sim.a_e = np.zeros((par.T,par.N+par.M))
-		sim.c_e = np.zeros((par.T,par.N+par.M))
+		sim.s = np.zeros(par.types, par.T)  # Search effort
+		sim.c = np.zeros(par.types, par.T)  # Consumption
+		sim.a = np.zeros(par.types, par.T)  # Savings
+		sim.a_e = np.zeros((par.types, par.T,par.N+par.M))
+		sim.c_e = np.zeros((par.types, par.T,par.N+par.M))
+
+		sim.s_total = np.zeros(par.T)  # Total search effort
+
+		par.cost1 = 107.0
+		par.cost2 = 310.4
+		par.cost3 = 570.0
+		par.gamma = 0.06
+
+
+		par.types = 3
+
+		
+		par.type_shares1 = 0.17
+		par.type_shares3 = 0.0
 	
 		
 
@@ -85,6 +129,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par = self.par
 		
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
+
+		par.type_shares2 = 1-par.type_shares1 - par.type_shares3
 
         #Income when unemployed
 		par.income_u = np.zeros(par.T) 
@@ -132,8 +178,8 @@ class ReferenceDependenceClass(EconModelClass):
 
 
 		# Container for value functions
-		par.V_e_t_a = np.zeros((par.T, par.Na))
-		par.V_e = np.zeros((par.T, par.N+par.M, par.Na))	
+		par.V_e_t_a = np.zeros((par.types, par.T, par.Na))
+		par.V_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))	
 
 
 		# b. states
@@ -144,3 +190,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.Nstates_pd_t = par.T # number of auxiliary post-decision states
 		
 
+	def solve(self):
+		value_function_employment(self.par, self.sol)
+		solve_search_and_consumption(self.par, self.sol)
+		sim_search_effort(self.par, self.sol, self.sim)

@@ -26,42 +26,44 @@ def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
 
 def value_function_employment_VFI(par, sol):
     """Value function when employed"""
-    V_e = np.zeros((par.T, par.N + par.M, par.Na))
-    a_next = np.zeros((par.T, par.N + par.M, par.Na))
-    c = np.zeros((par.T, par.N + par.M, par.Na))
+    V_e = np.zeros((par.types,par.T, par.N + par.M, par.Na))
+    a_next = np.zeros((par.types,par.T, par.N + par.M, par.Na))
+    c = np.zeros((par.types,par.T, par.N + par.M, par.Na))
 
-    for i_t in range(par.T): 
-        for i_n in range(par.N + par.M - 1, -1, -1):
-            for i_a in range(par.Na):
-                if i_n == par.N + par.M - 1:  # Stationary state
-                    r = par.r_e_m[i_t, i_t + i_n]
-                    c[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
-                    V_e[i_t, i_n, i_a] = utility(par, c[i_t, i_n, i_a], r) / (1 - par.delta)  ## stationary state
-                    a_next[i_t, i_n, i_a] = par.a_grid[i_a]
+    for type in range(par.types):
 
+        for i_t in range(par.T): 
+            for i_n in range(par.N + par.M - 1, -1, -1):
+                for i_a in range(par.Na):
+                    if i_n == par.N + par.M - 1:  # Stationary state
+                        r = par.r_e_m[i_t, i_t + i_n]
+                        c[type,i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
+                        V_e[type,i_t, i_n, i_a] = utility(par, c[type,i_t, i_n, i_a], r) / (1 - par.delta)  ## stationary state
+                        a_next[type,i_t, i_n, i_a] = par.a_grid[i_a]
+
+                        
+
+                    else:  # Consumption saving problem
+                        lower_bound = par.L
+                        upper_bound = (par.a_grid[i_a] + par.w) * par.R - 1e-6  # consumption must be positive
+                        upper_bound = min(upper_bound, par.A_0)
+
+                        # Run the optimizer using minimize_scalar with method='golden'
+                        result = minimize_scalar(objective_function, bounds=(lower_bound, upper_bound), args=(par, i_a, i_t, i_n, V_e[type,i_t, i_n + 1, :]), method='bounded')
+
+                        if result.success:
+                            a_next[type,i_t, i_n, i_a] = result.x
+                            V_e[type,i_t, i_n, i_a] = -result.fun
+                            c[type,i_t, i_n, i_a] = par.a_grid[i_a] + par.w - a_next[type,i_t, i_n, i_a] / par.R
+                        else:
+                            print(f"Error at t={i_t}, i_n={i_n}, i_a={i_a}")
+                            print("Error message:", result.message)
+                            print("Current function value:", result.fun)
+                            print("Optimization result details:", result)
                     
-
-                else:  # Consumption saving problem
-                    lower_bound = par.L
-                    upper_bound = (par.a_grid[i_a] + par.w) * par.R - 1e-6  # consumption must be positive
-                    upper_bound = min(upper_bound, par.A_0)
-
-                    # Run the optimizer using minimize_scalar with method='golden'
-                    result = minimize_scalar(objective_function, bounds=(lower_bound, upper_bound), args=(par, i_a, i_t, i_n, V_e[i_t, i_n + 1, :]), method='bounded')
-
-                    if result.success:
-                        a_next[i_t, i_n, i_a] = result.x
-                        V_e[i_t, i_n, i_a] = -result.fun
-                        c[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - a_next[i_t, i_n, i_a] / par.R
-                    else:
-                        print(f"Error at t={i_t}, i_n={i_n}, i_a={i_a}")
-                        print("Error message:", result.message)
-                        print("Current function value:", result.fun)
-                        print("Optimization result details:", result)
-                
             
 
-    par.V_e_t_a = V_e[:, 0, :]
+    par.V_e_t_a = V_e[:, :, 0, :]
     par.V_e = V_e
     sol.a_next_e = a_next
     sol.c_e = c
@@ -205,14 +207,14 @@ def value_function_employment_EGM(par, sol):
 
 #     return V_u,s
 
-def unemployment_ss(par, t, i_a):
-    V_e = par.V_e_t_a[t, i_a]
+def unemployment_ss(par, t, i_a, type):
+    V_e = par.V_e_t_a[type, t, i_a]
     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
     r = par.r_u[t]
 
     def bellman_difference(V_u):
-        s = inv_marg_cost(par.delta * (V_e - V_u))
-        V_u_new = utility(par, c, r) - cost(s) + par.delta * (s * V_e + (1 - s) * V_u)
+        s = inv_marg_cost(par.delta * (V_e - V_u))[type]
+        V_u_new = utility(par, c, r) - cost(par, s)[type] + par.delta * (s * V_e + (1 - s) * V_u)
         return V_u_new - V_u
 
     # Check values at the initial interval endpoints
@@ -248,7 +250,7 @@ def unemployment_ss(par, t, i_a):
 
     # Perform the root finding
     V_u = brentq(bellman_difference, a, b)
-    s = inv_marg_cost(par.delta * (V_e - V_u))
+    s = inv_marg_cost(par.delta * (V_e - V_u))[type]
 
     return V_u, s
 
@@ -259,7 +261,7 @@ def unemployment_ss(par, t, i_a):
 
 def solve_search_and_consumption(par, sol):
     # a. allocate
-    tuple = (par.T, par.Na)
+    tuple = (par.types, par.T, par.Na)
     s = np.zeros(tuple)
     V_u = np.zeros(tuple)
     V_u_next = np.zeros(tuple)
@@ -269,55 +271,56 @@ def solve_search_and_consumption(par, sol):
 
 
     # b. solve
-    for t in range(par.T - 1, -1, -1):
-        for i_a in range(par.Na):
-            if t == par.T - 1:   # Stationary state
-                V_u[t,i_a] = unemployment_ss(par,t, i_a)[0]
-                s[t,i_a] = unemployment_ss(par, t, i_a)[1]
-                a_next[t,i_a] = par.a_grid[i_a]
-                c[t,i_a] = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
+    for type in range(par.types):
+        for t in range(par.T - 1, -1, -1):
+            for i_a in range(par.Na):
+                if t == par.T - 1:   # Stationary state
+                    V_u[type,t,i_a] = unemployment_ss(par, t, i_a, type)[0]
+                    s[type,t,i_a] = unemployment_ss(par, t, i_a, type)[1]
+                    a_next[type,t,i_a] = par.a_grid[i_a]
+                    c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
+                
+                else: # Previous periods. Chech that debt converges to par.L before stationary state when solving forward
+                    def objective_function_ti(a_next, par,t,V_u_next):
+                        
+                        income = par.income_u[t]
+                        r = par.r_u[t]
+                        c = par.a_grid[i_a] + income - a_next / (par.R)
+                        V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[type,t+1, :])
+                        V_e_next = V_e_next_interp(a_next)
+                        V_u_next_interp = interp1d(par.a_grid, V_u_next)
+                        V_u_next = V_u_next_interp(a_next)
+                        s = inv_marg_cost(par.delta*(V_e_next-V_u_next))
+                        V_u = utility(par,c,r) - cost(s) + par.delta * (s * V_e_next+(1-s)*V_u_next)
+                        return -V_u
             
-            else: # Previous periods. Chech that debt converges to par.L before stationary state when solving forward
-                def objective_function_ti(a_next, par,t,V_u_next):
-                    
-                    income = par.income_u[t]
-                    r = par.r_u[t]
-                    c = par.a_grid[i_a] + income - a_next / (par.R)
-                    V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[t+1, :])
-                    V_e_next = V_e_next_interp(a_next)
-                    V_u_next_interp = interp1d(par.a_grid, V_u_next)
-                    V_u_next = V_u_next_interp(a_next)
-                    s = inv_marg_cost(par.delta*(V_e_next-V_u_next))
-                    V_u = utility(par,c,r) - cost(s) + par.delta * (s * V_e_next+(1-s)*V_u_next)
-                    return -V_u
-        
 
-                lower_bound = par.L
-                upper_bound = (par.a_grid[i_a] + par.income_u[t])*par.R - 10e-6
-                upper_bound = min(upper_bound, par.A_0)
-                result = minimize_scalar(objective_function_ti, bounds=(lower_bound, upper_bound), args=(par, t, V_u_next[t+1,:]), method='bounded')
+                    lower_bound = par.L
+                    upper_bound = (par.a_grid[i_a] + par.income_u[t])*par.R - 10e-6
+                    upper_bound = min(upper_bound, par.A_0)
+                    result = minimize_scalar(objective_function_ti, bounds=(lower_bound, upper_bound), args=(par, t, V_u_next[:, t+1,:]), method='bounded')
 
-                             
-                # Extract optimal a_next
-                if result.success:
-                                      
-                    a_next[t, i_a] = result.x
-                    V_u[t,i_a] = -result.fun
-                    
-                    V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[t+1, :])
-                    V_e_next = V_e_next_interp(a_next[t,i_a])
-                    V_u_next_interp = interp1d(par.a_grid, V_u_next[t+1,:])
-                    V_u_next_int = V_u_next_interp(a_next[t, i_a])
-                    s[t,i_a] = inv_marg_cost(par.delta*(V_e_next-V_u_next_int))
-                    c[t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[t,i_a] / (par.R)
-              
-                else:
-                    print("Error at t={}, i_a={}".format(t, i_a))
-                    print("Error message:", result.message)
-                    print("Current function value:", result.fun)
-                    print("Optimization result details:", result)
+                                
+                    # Extract optimal a_next
+                    if result.success:
+                                        
+                        a_next[type, t, i_a] = result.x
+                        V_u[type, t,i_a] = -result.fun
+                        
+                        V_e_next_interp = interp1d(par.a_grid, par.V_e_t_a[type,t+1, :])
+                        V_e_next = V_e_next_interp(a_next[type, t,i_a])
+                        V_u_next_interp = interp1d(par.a_grid, V_u_next[type,t+1,:])
+                        V_u_next_int = V_u_next_interp(a_next[type,t, i_a])
+                        s[type,t,i_a] = inv_marg_cost(par.delta*(V_e_next-V_u_next_int))
+                        c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[type,t,i_a] / (par.R)
+                
+                    else:
+                        print("Error at t={}, i_a={}".format(t, i_a))
+                        print("Error message:", result.message)
+                        print("Current function value:", result.fun)
+                        print("Optimization result details:", result)
 
-            V_u_next[t,i_a] = V_u[t,i_a]
+                V_u_next[type,t,i_a] = V_u[type,t,i_a]
         
     sol.s = s
     sol.a_next = a_next
@@ -327,7 +330,7 @@ def solve_search_and_consumption(par, sol):
 
 ### Solve forward from initial assets to get true search and consumption path ###
 
-def solve_forward(par, sol, sim):
+def solve_forward(par, sol, sim, type):
     s = np.zeros(par.T)
     c = np.zeros(par.T)
     a_next = np.zeros(par.T)
@@ -335,20 +338,38 @@ def solve_forward(par, sol, sim):
     for t in range(par.T):
         if t == 0: # First period
             a = par.A_0
-            s[t] = sol.s[t,-1]
-            a_next[t] = sol.a_next[t,-1]
+            s[t] = sol.s[type,t,-1]
+            a_next[t] = sol.a_next[type,t,-1]
             c[t] = a + par.income_u[t] - a_next[t] / par.R
         else:
             a = a_next[t-1]
-            s_interp = interp1d(par.a_grid, sol.s[t, :])
-            a_next_interp = interp1d(par.a_grid, sol.a_next[t, :])
+            s_interp = interp1d(par.a_grid, sol.s[type,t, :])
+            a_next_interp = interp1d(par.a_grid, sol.a_next[type,t, :])
             s[t] = s_interp(a)
             a_next[t] = a_next_interp(a)
             c[t] = a + par.income_u[t] - a_next[t] / par.R
     
-    sim.s = s
-    sim.a_next = a_next
-    sim.c = c
+    sim.s[type,:] = s
+    sim.a_next[type,:] = a_next
+    sim.c[type,:] = c
+
+def sim_search_effort(par, sol, sim):
+    s = np.zeros(par.T)
+
+    type_shares = [par.type_shares1, par.type_shares2, par.type_shares3]
+
+    for i in range(par.types):
+        solve_forward(par, sol, sim, i)
+
+    for t in range(par.T):
+        if t == 0:
+            s[t] = type_shares @ sim.s[:,t]
+        else:
+            type_shares = type_shares * (1-sim.s[:,t-1])
+            type_shares = type_shares / sum(type_shares)
+            s[t] = type_shares @ sim.s[:,t]
+    
+    sim.s_total[:] = s[:par.T_sim]
 
 
 # def solve_forward_employment(par, sol, sim):
