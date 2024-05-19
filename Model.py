@@ -67,9 +67,10 @@ class ReferenceDependenceClass(EconModelClass):
 		par.w = 1.0     #Normalize wages
 		par.welfare = 90/675
 
-		par.b1 = 222/675*par.w    # High transfers
-		par.b2 = par.b1    # Medium transfers
-		par.b3 = 114/675*par.w    # Low transfers
+		par.b1 = 222/675*par.w    	# High transfers
+		par.b2 = par.b1    			# Medium transfers
+		par.b3 = 114/675*par.w    	# Low transfers
+		par.b4 = par.welfare*par.w  # Welfare
 
 		# Preferences
 		par.eta = 1.0  ### Reference dependence parameter
@@ -79,8 +80,8 @@ class ReferenceDependenceClass(EconModelClass):
 		#Savings
 		par.R = 1/par.delta + 0.0001   #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -2.0  # borrowing constraint
-		par.Na = 20  #Number of grid points for savings
+		par.L = -0.000001  # borrowing constraint
+		par.Na = 2  #Number of grid points for savings
 
 
 		# EGM does not give the same as VFI if R is not 1/delta, if eta is different from zero, or if sigma is different from 1
@@ -100,15 +101,15 @@ class ReferenceDependenceClass(EconModelClass):
 
 
 		par.cost1 = 107.0
-		par.cost2 = 310
+		par.cost2 = 310.3
 		par.cost3 = 570.0
 		par.gamma = 0.06
 
 
-		par.types = 1
+		par.types = 3
 
 		
-		par.type_shares1 = 1.0
+		par.type_shares1 = 0.17
 		par.type_shares3 = 0.0
 	
 		
@@ -129,7 +130,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par.income_u = np.zeros(par.T) 
 		par.income_u[0:par.T1] = par.b1
 		par.income_u[par.T1:par.T1+par.T2] = par.b2
-		par.income_u[par.T1+par.T2:] = par.b3
+		par.income_u[par.T1+par.T2:par.T1+par.T2+par.T3] = par.b3
+		par.income_u[par.T1+par.T2+par.T3:] = par.b4
 	
         #Income when employed
 		par.income_e = np.zeros((par.T, par.T))

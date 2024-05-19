@@ -55,6 +55,7 @@ def value_function_employment_VFI(par, sol):
                             a_next[type,i_t, i_n, i_a] = result.x
                             V_e[type,i_t, i_n, i_a] = -result.fun
                             c[type,i_t, i_n, i_a] = par.a_grid[i_a] + par.w - a_next[type,i_t, i_n, i_a] / par.R
+                            V_e[type,i_t, i_n, i_a] = utility(par, c[type,i_t, i_n, i_a], par.r_e_m[i_t, i_t + i_n]) + par.delta * V_e[type,i_t, i_n+1, i_a]
                         else:
                             print(f"Error at t={i_t}, i_n={i_n}, i_a={i_a}")
                             print("Error message:", result.message)
@@ -207,7 +208,6 @@ def value_function_employment_EGM(par, sol):
 
 #     return V_u,s
 
-
 def unemployment_ss(par, t, i_a, type):
     V_e = par.V_e_t_a[type, t, i_a]
     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
@@ -215,6 +215,10 @@ def unemployment_ss(par, t, i_a, type):
 
     def bellman_difference(V_u):
         s = inv_marg_cost(par, par.delta * (V_e - V_u))[type]
+        if s > 1:
+            s=0.9
+        if s < 0:
+            s=0
         V_u_new = utility(par, c, r) - cost(par, s)[type] + par.delta * (s * V_e + (1 - s) * V_u)
         return V_u_new - V_u
 
@@ -222,24 +226,30 @@ def unemployment_ss(par, t, i_a, type):
     a, b = -1, 1
     fa = bellman_difference(a)
     fb = bellman_difference(b)
+    print(f"Initial interval: a={a}, fa={fa}, b={b}, fb={fb}")
 
     # If the initial interval does not work, try finding a suitable interval by expanding
     if fa * fb > 0:
         interval_found = False
 
         # Generate search intervals dynamically with both positive and negative factors
-        factors = [-100, -50, -20, -10, -5, -1, 0, 1, 5, 10, 20, 50, 100, 200, 500]
-        for factor_a in factors:
-            for factor_b in factors:
-                fa = bellman_difference(factor_a)
-                fb = bellman_difference(factor_b)
-                if fa * fb < 0:
-                    a, b = factor_a, factor_b
-                    interval_found = True
-                    break
-
-    
-    
+        factors_a = np.linspace(-500,0,100)#[-100, -50, -20, -10, -5, -1, 0, 1, 5, 10, 20, 50, 100, 200, 500]
+        factors_b = np.linspace(0,500,100)
+        for factor_a in factors_a:
+            for factor_b in factors_b:
+                if factor_a != factor_b:  # Ensure we are not checking the same point twice
+                    fa = bellman_difference(factor_a)
+                    fb = bellman_difference(factor_b)
+                    print(f"Trying interval: factor_a={factor_a}, fa={fa}, factor_b={factor_b}, fb={fb}")
+                    if fa == fb:
+                        print("RASMUS")
+                    if fa * fb < 0:
+                        a, b = factor_a, factor_b
+                        interval_found = True
+                        print(f"Valid interval found: a={a}, b={b}")
+                        break
+            if interval_found:
+                break
 
         if not interval_found:
             raise ValueError("Could not find a valid interval where the function has different signs.")
@@ -249,6 +259,7 @@ def unemployment_ss(par, t, i_a, type):
     s = inv_marg_cost(par, par.delta * (V_e - V_u))[type]
 
     return V_u, s
+
 
 
 
