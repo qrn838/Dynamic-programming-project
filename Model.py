@@ -73,8 +73,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par.b1 = 222/675*par.w    # High transfers
 		par.b2 = par.b1    # Medium transfers
 		par.b3 = 114/675*par.w    # Low transfers
-		# par.b4 = par.welfare*par.w	# Welfare
-		par.b4 = par.b3
+		par.b4 = par.welfare*par.w	# Welfare
+		# par.b4 = par.b3
 
 		# Preferences
 		par.eta = 1.0  		# Reference dependence parameter
@@ -94,7 +94,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.cost3 = 570.0
 		par.gamma = 0.06	# Inverse of elasticity of search effort w.r.t. value of employment
 
-		par.types = 1	# Number of types
+		par.types = 2	# Number of types
 
 		#Share of types (Type 2 is residual)
 		par.type_shares1 = 1.0	

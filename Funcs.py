@@ -58,6 +58,8 @@ def marg_cost(par,s):
 
 def inv_marg_cost(par, s):
     """ inverse marginal cost from seaching function"""
+
+
     inv_c_marg = np.zeros(3)
     inv_c_marg[0] = (s/par.cost1)**(1/par.gamma)
     inv_c_marg[1] = (s/par.cost2)**(1/par.gamma)

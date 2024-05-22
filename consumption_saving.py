@@ -187,46 +187,64 @@ def value_function_employment_EGM(par, sol):
 
 
 
+# def unemployment_ss_ConSav(par, t, i_a, type):
+#     '''Find the stationary state of the unemployment value function'''
+#     V_e = par.V_e_t_a[type, t, i_a]
+#     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
+#     r = par.r_u[t]
 
+#     def bellman_difference(V_u):
+#         '''Objective function for solver'''
+#         s = inv_marg_cost(par, par.delta * (V_e - V_u))[type]
+#         V_u_new = utility(par, c, r) - cost(par, s)[type] + par.delta * (s * V_e + (1 - s) * V_u)
+#         return V_u_new - V_u
 
-def unemployment_ss_ConSav(par, t, i_a, type):
-    '''Find the stationary state of the unemployment value function'''
-    V_e = par.V_e_t_a[type, t, i_a]
+#     # Initial values for V_u
+#     a, b = -5, 5
+#     fa = bellman_difference(a)
+#     fb = bellman_difference(b)
+
+#     # If no root: Try different starting values
+#     if fa * fb > 0:
+#         interval_found = False
+
+#         factors = [-500, -300, -100, -50, -20, -10, -5, -1, 0, 1, 5, 10, 20, 50, 100, 200, 500]
+#         for factor_a in factors:
+#             for factor_b in factors:
+#                 fa = bellman_difference(factor_a)
+#                 fb = bellman_difference(factor_b)
+#                 if fa * fb < 0:
+#                     a, b = factor_a, factor_b
+#                     interval_found = True
+#                     break
+#         if not interval_found:
+#             raise ValueError("Could not find a valid interval where the function has different signs.")
+
+#     # Save results
+#     V_u = brentq(bellman_difference, a, b)
+#     s = inv_marg_cost(par, par.delta * (V_e - V_u))[type]
+
+#     return V_u, s
+
+def unemployment_ss_ConSav(par,t, i_a, i):
+    """ Solve for search effort and value function in steady state when unemployed"""
+    V_e = par.V_e_t_a[i, t, i_a]
     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
     r = par.r_u[t]
 
-    def bellman_difference(V_u):
-        '''Objective function for solver'''
-        s = inv_marg_cost(par, par.delta * (V_e - V_u))[type]
-        V_u_new = utility(par, c, r) - cost(par, s)[type] + par.delta * (s * V_e + (1 - s) * V_u)
-        return V_u_new - V_u
+    def objective_function(s, par, i, V_e, c, r):
+        V_u = (utility(par, c, r) - cost(par,s)[i] + par.delta * (s * V_e)) / (1-par.delta*(1-s))
+        return -V_u  # Minimize the negative of V_u to maximize V_u
 
-    # Initial values for V_u
-    a, b = -5, 5
-    fa = bellman_difference(a)
-    fb = bellman_difference(b)
+    # Perform optimization
+    s_initial_guess = 0.8
+    result = minimize(objective_function, s_initial_guess, args=(par,i,V_e, c, r), bounds=[(0, 1)])
 
-    # If no root: Try different starting values
-    if fa * fb > 0:
-        interval_found = False
+    # Extract optimal s
+    optimal_s_ss = result.x[0]
+    V_u_ss = -result.fun
 
-        factors = [-100, -50, -20, -10, -5, -1, 0, 1, 5, 10, 20, 50, 100, 200, 500]
-        for factor_a in factors:
-            for factor_b in factors:
-                fa = bellman_difference(factor_a)
-                fb = bellman_difference(factor_b)
-                if fa * fb < 0:
-                    a, b = factor_a, factor_b
-                    interval_found = True
-                    break
-        if not interval_found:
-            raise ValueError("Could not find a valid interval where the function has different signs.")
-
-    # Save results
-    V_u = brentq(bellman_difference, a, b)
-    s = inv_marg_cost(par, par.delta * (V_e - V_u))[type]
-
-    return V_u, s
+    return optimal_s_ss, V_u_ss
 
 
 
@@ -249,8 +267,8 @@ def solve_search_and_consumption_ConSav(par, sol):
         for t in range(par.T - 1, -1, -1):      # Loop backwards over periods
             for i_a in range(par.Na):           # Loop over asset grid
                 if t == par.T - 1:              # Stationary state
-                    V_u[type,t,i_a] = unemployment_ss_ConSav(par, t, i_a, type)[0]
-                    s[type,t,i_a] = unemployment_ss_ConSav(par, t, i_a, type)[1]
+                    V_u[type,t,i_a] = unemployment_ss_ConSav(par, t, i_a, type)[1]
+                    s[type,t,i_a] = unemployment_ss_ConSav(par, t, i_a, type)[0]
                     a_next[type,t,i_a] = par.a_grid[i_a]
                     c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
                 
@@ -265,9 +283,9 @@ def solve_search_and_consumption_ConSav(par, sol):
                         V_u_next_interp = interp1d(par.a_grid, V_u_next)                    # Interpolate value of unemployment next period
                         V_u_next = V_u_next_interp(a_next)                                  # Value of unemployment next period
                         s = inv_marg_cost(par, par.delta*(V_e_next-V_u_next))[type]         # Search effort
-                        if s > 1:       # Check if search effort is within bounds
-                            print('obj.s')
-                            print(s)
+                        # if s > 1:       # Check if search effort is within bounds
+                        #     print('obj.s')
+                        #     print(s)
                         V_u = utility(par,c,r) - cost(par,s)[type] + par.delta * (s * V_e_next+(1-s)*V_u_next)
                         return -V_u
             

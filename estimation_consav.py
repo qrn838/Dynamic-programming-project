@@ -24,7 +24,9 @@ def updatepar(par, parnames, parvals):
 
 
 
-def method_simulated_moments(model,est_par,theta0, bounds, weight):
+
+
+def method_simulated_moments(model,est_par,theta0, bounds, weight=False):
     ''' Estimate the model using simulated moments'''
     assert (len(est_par)==len(theta0)), 'Number of parameters and initial values do not match'
 
@@ -40,7 +42,7 @@ def method_simulated_moments(model,est_par,theta0, bounds, weight):
     return res
 
 
-def sum_squared_diff_moments(theta,model,est_par,weight==False):
+def sum_squared_diff_moments(theta,model,est_par,weight=False):
     ''' Objective function for estimating the model before the reform using simulated moments'''
 
     #Update parameters
@@ -52,7 +54,7 @@ def sum_squared_diff_moments(theta,model,est_par,weight==False):
 
     # Solve the model before
     model.allocate()
-    model.solve()
+    model.solve_ConSav()
     moments = sim.s_total
     
     # Objective function
@@ -86,14 +88,14 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight):
     par.b1 = 222/675*par.w
     par.b2 = par.b1
     model.allocate()
-    model.solve() 
+    model.solve_ConSav() 
     moments_before_model = model.sim.s_total
 
     # Solve model after
     par.b1 = 342.0/675.0
     par.b2 = 171.0/675.0
     model.allocate()
-    model.solve()
+    model.solve_ConSav()
     moments_after_model = model.sim.s_total
 
     # Combine model results from before and after refor
