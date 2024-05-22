@@ -72,7 +72,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par.b1 = 222/675*par.w    # High transfers
 		par.b2 = par.b1    # Medium transfers
 		par.b3 = 114/675*par.w    # Low transfers
-		par.b4 = par.welfare*par.w	# Welfare
+		# par.b4 = par.welfare*par.w	# Welfare
+		par.b4 = par.b3
 
 		# Preferences
 		par.eta = 1.0  ### Reference dependence parameter
@@ -82,8 +83,8 @@ class ReferenceDependenceClass(EconModelClass):
 		#Savings
 		par.R = 1/par.delta + 0.0001   #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -2.0  # borrowing constraint
-		par.Na = 20  #Number of grid points for savings
+		par.L = -0.0  # borrowing constraint
+		par.Na = 1  #Number of grid points for savings
 
 
 		# EGM does not give the same as VFI if R is not 1/delta, if eta is different from zero, or if sigma is different from 1
@@ -212,5 +213,5 @@ class ReferenceDependenceClass(EconModelClass):
 		sim_search_effort_ConSav(self.par, self.sol, self.sim)
 	
 	def solve_HTM(self):
-		sim_s = sim_search_effort_ConSav(self.par)
+		sim_s = sim_search_effort_HTM(self.par)
 		return sim_s

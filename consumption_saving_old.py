@@ -9,7 +9,7 @@ from scipy.optimize import bisect
 import numba
 
 from Funcs import *
-def value_function_employment_ConSav(par, sol):
+def value_function_employment(par, sol):
     if par.euler == False:
         value_function_employment_VFI(par, sol)
     else:
@@ -208,7 +208,7 @@ def value_function_employment_EGM(par, sol):
 #     return V_u,s
 
 
-def unemployment_ss_ConSav(par, t, i_a, type):
+def unemployment_ss(par, t, i_a, type):
     V_e = par.V_e_t_a[type, t, i_a]
     c = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
     r = par.r_u[t]
@@ -232,11 +232,14 @@ def unemployment_ss_ConSav(par, t, i_a, type):
         for factor_a in factors:
             for factor_b in factors:
                 fa = bellman_difference(factor_a)
-                fb = bellman_difference(-factor_b)
+                fb = bellman_difference(factor_b)
                 if fa * fb < 0:
                     a, b = factor_a, factor_b
                     interval_found = True
                     break
+
+    
+    
 
         if not interval_found:
             raise ValueError("Could not find a valid interval where the function has different signs.")
@@ -253,7 +256,7 @@ def unemployment_ss_ConSav(par, t, i_a, type):
 
 ### Backward Induction to solve search effort in all periods of unemployment ###
 
-def solve_search_and_consumption_ConSav(par, sol):
+def solve_search_and_consumption(par, sol):
     # a. allocate
     tuple = (par.types, par.T, par.Na)
     s = np.zeros(tuple)
@@ -269,8 +272,8 @@ def solve_search_and_consumption_ConSav(par, sol):
         for t in range(par.T - 1, -1, -1):
             for i_a in range(par.Na):
                 if t == par.T - 1:   # Stationary state
-                    V_u[type,t,i_a] = unemployment_ss_ConSav(par, t, i_a, type)[0]
-                    s[type,t,i_a] = unemployment_ss_ConSav(par, t, i_a, type)[1]
+                    V_u[type,t,i_a] = unemployment_ss(par, t, i_a, type)[0]
+                    s[type,t,i_a] = unemployment_ss(par, t, i_a, type)[1]
                     a_next[type,t,i_a] = par.a_grid[i_a]
                     c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - par.a_grid[i_a] / (par.R)
                 
@@ -356,7 +359,7 @@ def solve_forward(par, sol, sim, type):
 
 
 
-def sim_search_effort_ConSav(par, sol, sim):
+def sim_search_effort(par, sol, sim):
     s = np.zeros(par.T)
 
     type_shares = [par.type_shares1, par.type_shares2, par.type_shares3]
