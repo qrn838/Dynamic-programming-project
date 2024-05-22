@@ -100,6 +100,41 @@ class ReferenceDependenceClass(EconModelClass):
 		par.type_shares1 = 1.0	
 		par.type_shares3 = 0.0
 
+		############################################
+		####		   Initial guesses 		    ####
+		############################################
+
+		par.noOfParams = 7				# Number of parameters
+		par.noSearchInits = 30			# Number of numerical minimizations to run
+
+		# The range from initial values are drawn (The same as in DellaVigna et al. (2017))
+		par.lb_rep = np.zeros(par.noOfParams)
+		par.ub_rep = np.ones(par.noOfParams)
+		# Highest search cost
+		par.lb_hsc = 50
+		par.ub_hsc = 1000
+		# Medium search cost
+		par.lb_msc = 30
+		par.ub_msc = 100
+		# Lowest search cost
+		par.lb_lsc = 0
+		par.ub_lsc = 100
+		# Gamma
+		par.lb_gam = 0.1
+		par.ub_gam = 1.3
+		# Shares of types
+		par.lb_share = 0
+		par.ub_share = 2/par.types
+		# Sigma
+		par.lb_sig = 1
+		par.ub_sig = 30
+		# N
+		par.lb_N = 1
+		par.ub_N = 25
+		# Welfare
+		par.lb_wel = 0
+		par.ub_wel = 200/450
+
 		################################################
 		# Needed for EconModelClass (not used)
 		par.Nstates_fixed = 0 # number of fixed states
@@ -123,6 +158,36 @@ class ReferenceDependenceClass(EconModelClass):
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
 
 		par.type_shares2 = 1-par.type_shares1 - par.type_shares3
+
+		# Initial guesses - reference dependent model
+		if par.eta == 1:
+			par.lb_rep[0] = par.lb_msc
+			par.ub_rep[0] = par.ub_msc
+			par.lb_rep[1] = par.lb_lsc
+			par.ub_rep[1] = par.ub_lsc
+			par.lb_rep[2] = par.lb_gam
+			par.ub_rep[2] = par.ub_gam
+			par.lb_rep[3] = par.lb_share
+			par.ub_rep[3] = par.ub_share
+			par.lb_rep[4] = par.lb_sig
+			par.ub_rep[4] = par.ub_sig
+			par.lb_rep[5] = par.lb_N
+			par.ub_rep[5] = par.ub_N
+			par.lb_rep[6] = par.lb_wel
+			par.ub_rep[6] = par.ub_wel
+		else:
+			par.lb_rep[0] = par.lb_hsc
+			par.ub_rep[0] = par.ub_hsc
+			par.lb_rep[1] = par.lb_msc
+			par.ub_rep[1] = par.ub_msc
+			par.lb_rep[2] = par.lb_lsc
+			par.ub_rep[2] = par.ub_lsc
+			par.lb_rep[3] = par.lb_gam
+			par.ub_rep[3] = par.ub_gam
+			par.lb_rep[4:6] = par.lb_share
+			par.ub_rep[4:6] = par.ub_share
+			par.lb_rep[6] = par.lb_wel
+			par.ub_rep[6] = par.ub_wel
 
         #Income when unemployed
 		par.income_u = np.zeros(par.T)					# Empty array to store benefits

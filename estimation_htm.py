@@ -128,6 +128,15 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=False):
      
     return res
 
+def getSearchInits_benchmark_HTM(model):
+    par = model.par
+
+    lb = np.array(par.lb_rep.T,par.noSearchInits)
+    ub = np.arry(par.ub_rep.T,par.noSearchInits)
+    searchInits = lb + (ub - lb) * np.random(par.noOfParams,par.noSearchInits)
+
+    return searchInits
+
     
     
 
