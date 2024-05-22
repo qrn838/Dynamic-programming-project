@@ -17,7 +17,7 @@ def value_function_employment_ConSav(par, sol):
 
 
 ########## VFI #########
-def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
+def objective_function_ConSav(a_next, par, i_a, i_t, i_n, V_e_next):
     r = par.r_e_m[i_t, i_t + i_n]
     c = par.a_grid[i_a] + par.w - a_next / (par.R)
     V_e_next_interp = interp1d(par.a_grid, V_e_next)
@@ -49,7 +49,7 @@ def value_function_employment_VFI(par, sol):
                         upper_bound = min(upper_bound, par.A_0)
 
                         # Run the optimizer using minimize_scalar with method='golden'
-                        result = minimize_scalar(objective_function, bounds=(lower_bound, upper_bound), args=(par, i_a, i_t, i_n, V_e[type,i_t, i_n + 1, :]), method='bounded')
+                        result = minimize_scalar(objective_function_ConSav, bounds=(lower_bound, upper_bound), args=(par, i_a, i_t, i_n, V_e[type,i_t, i_n + 1, :]), method='bounded')
 
                         if result.success:
                             a_next[type,i_t, i_n, i_a] = result.x
@@ -232,11 +232,14 @@ def unemployment_ss_ConSav(par, t, i_a, type):
         for factor_a in factors:
             for factor_b in factors:
                 fa = bellman_difference(factor_a)
-                fb = bellman_difference(-factor_b)
+                fb = bellman_difference(factor_b)
                 if fa * fb < 0:
                     a, b = factor_a, factor_b
                     interval_found = True
                     break
+
+    
+    
 
         if not interval_found:
             raise ValueError("Could not find a valid interval where the function has different signs.")
@@ -330,7 +333,7 @@ def solve_search_and_consumption_ConSav(par, sol):
 
 ### Solve forward from initial assets to get true search and consumption path ###
 
-def solve_forward(par, sol, sim, type):
+def solve_forward_ConSav(par, sol, sim, type):
     s = np.zeros(par.T)
     c = np.zeros(par.T)
     a_next = np.zeros(par.T)
@@ -363,7 +366,7 @@ def sim_search_effort_ConSav(par, sol, sim):
     type_shares = type_shares[:par.types]
 
     for i in range(par.types):
-        solve_forward(par, sol, sim, i)
+        solve_forward_ConSav(par, sol, sim, i)
 
     for t in range(par.T):
         if t == 0:
@@ -411,7 +414,7 @@ def sim_search_effort_ConSav(par, sol, sim):
 #     sim.a_e = a_next
 
 ###########  Not made with types yet  ##############
-def solve_forward_employment(par, sol, sim):
+def solve_forward_employment_ConSav(par, sol, sim):
 
     a_next = np.zeros((par.T, par.N+par.M))
     c = np.zeros((par.T, par.N+par.M))

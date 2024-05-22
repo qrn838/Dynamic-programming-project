@@ -8,7 +8,6 @@ from EconModel import EconModelClass
 from hand_to_mouth import *
 from consumption_saving import *
 
-from EconModel import EconModelClass
 
 
 class ReferenceDependenceClass(EconModelClass):

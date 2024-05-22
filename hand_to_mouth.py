@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 from scipy.optimize import minimize
-from scipy.optimize import brentq
+
 from Funcs import *
 
 ### Value function employment all periods ###
@@ -22,61 +22,22 @@ def value_function_employment_HTM(par, c, t):
 
 ### Search effort and value function in steady state ###
 
-# def unemployed_ss_HTM(par,i):
-
-#     def objective_function(s, par, i):
-#         V_e = value_function_employment_HTM(par, par.w, par.T - 1)
-#         V_u = (consumption_utility(par.b4) - cost(par,s)[i] + par.delta * (s * V_e)) / (1-par.delta*(1-s))
-#         return -V_u  # Minimize the negative of V_u to maximize V_u
-
-#     # Perform optimization
-#     s_initial_guess = 0.8
-#     result = minimize(objective_function, s_initial_guess, args=(par,i,), bounds=[(0, 1)])
-
-#     # Extract optimal s
-#     optimal_s_ss = result.x[0]
-#     V_u_ss = -result.fun
-
-#     return optimal_s_ss, V_u_ss
-
 def unemployed_ss_HTM(par,i):
-    V_e = value_function_employment_HTM(par, par.w, par.T - 1)
-    c = par.b4
-    r = par.b4
 
-    def bellman_difference(V_u):
-        s = inv_marg_cost(par, par.delta * (V_e - V_u))[i]
-        V_u_new = utility(par, c, r) - cost(par, s)[i] + par.delta * (s * V_e + (1 - s) * V_u)
-        return V_u_new - V_u
+    def objective_function(s, par, i):
+        V_e = value_function_employment_HTM(par, par.w, par.T - 1)
+        V_u = (consumption_utility(par.b4) - cost(par,s)[i] + par.delta * (s * V_e)) / (1-par.delta*(1-s))
+        return -V_u  # Minimize the negative of V_u to maximize V_u
 
-    # Check values at the initial interval endpoints
-    a, b = -1, 1
-    fa = bellman_difference(a)
-    fb = bellman_difference(b)
+    # Perform optimization
+    s_initial_guess = 0.8
+    result = minimize(objective_function, s_initial_guess, args=(par,i,), bounds=[(0, 1)])
 
-    # If the initial interval does not work, try finding a suitable interval by expanding
-    if fa * fb > 0:
-        interval_found = False
+    # Extract optimal s
+    optimal_s_ss = result.x[0]
+    V_u_ss = -result.fun
 
-        # Generate search intervals dynamically with both positive and negative factors
-        factors = [-50, -20, -10, -5, -1, 0, 1, 5, 10, 20, 50, 100, 200, 500]
-        for factor_a in factors:
-            for factor_b in factors:
-                fa = bellman_difference(factor_a)
-                fb = bellman_difference(-factor_b)
-                if fa * fb < 0:
-                    a, b = factor_a, factor_b
-                    interval_found = True
-                    break
-
-        if not interval_found:
-            raise ValueError("Could not find a valid interval where the function has different signs.")
-
-    # Perform the root finding
-    V_u = brentq(bellman_difference, a, b)
-    s = inv_marg_cost(par, par.delta * (V_e - V_u))[i]
-
-    return V_u, s
+    return optimal_s_ss, V_u_ss
 
 
 
