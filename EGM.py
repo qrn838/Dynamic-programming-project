@@ -22,13 +22,18 @@ def EGM(par, sol):
             if n == par.N + par.M -1:
                 sol.c_e[t, n, :] = par.m_grid                   
                 sol.a_next_e[t, n, :] = (par.m_grid - sol.c_e[t, n, :])*par.R
-                # sol.c_e[t, n, :] = par.a_grid + par.w - par.a_grid/par.R
-                # sol.a_next_e[t, n, :] = par.a_grid
                 par.V_e[t, n, :] = utility(par, sol.c_e[t, n, :], par.r_e_m[t, t+n])/ (1 - par.delta)
-                # print(par.V_e[t, n, :])
+            
             elif n == par.N + par.M -2:
+                # Pay off debt
                 sol.a_next_e[t, n, :] = 0
                 sol.c_e[t, n, :] = par.a_grid + par.w - sol.a_next_e[t, n, :]/par.R
+                
+                # Handle case with negative consumption
+                # sol.a_next_e[t, n, :] = np.where(sol.c_e[t, n, :] <= 0, (par.m_grid - 1e-6)*par.R, sol.a_next_e[t, n, :])
+                # sol.c_e[t, n, :] = np.where(sol.c_e[t, n, :] <= 0, 1e-6, sol.c_e[t, n, :])
+                
+                # Value function
                 V_e_next = interp1d(par.a_grid, par.V_e[t, n+1, :])(sol.a_next_e[t, n, :])
                 par.V_e[t, n, :] = utility(par, sol.c_e[t, n, :], par.r_e_m[t, t+n]) + par.delta * V_e_next
             else:

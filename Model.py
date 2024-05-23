@@ -30,7 +30,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.T3 = par.N+1 #Time with low transfers
 		par.T = par.T1 + par.T2 + par.T3 + par.M #Total number of periods
 
-		par.Na = 100  #Number of grid points for savings
+		par.Na = 20  #Number of grid points for savings
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
