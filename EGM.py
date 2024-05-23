@@ -20,13 +20,18 @@ def EGM(par, sol):
 
             # Last period
             if n == par.N + par.M -1:
-                sol.c_e[t, n, :] = par.m_grid
+                sol.c_e[t, n, :] = par.m_grid                   
                 sol.a_next_e[t, n, :] = (par.m_grid - sol.c_e[t, n, :])*par.R
+                # sol.c_e[t, n, :] = par.a_grid + par.w - par.a_grid/par.R
+                # sol.a_next_e[t, n, :] = par.a_grid
                 par.V_e[t, n, :] = utility(par, sol.c_e[t, n, :], par.r_e_m[t, t+n])/ (1 - par.delta)
-                print(par.V_e[t, n, :])
+                # print(par.V_e[t, n, :])
+            elif n == par.N + par.M -2:
+                sol.a_next_e[t, n, :] = 0
+                sol.c_e[t, n, :] = par.a_grid + par.w - sol.a_next_e[t, n, :]/par.R
+                V_e_next = interp1d(par.a_grid, par.V_e[t, n+1, :])(sol.a_next_e[t, n, :])
+                par.V_e[t, n, :] = utility(par, sol.c_e[t, n, :], par.r_e_m[t, t+n]) + par.delta * V_e_next
             else:
-                #Marginal value of cash next period
-              
                 m_temp = np.zeros(par.Na+1)
                 c_temp = np.zeros(par.Na+1)
                 for i_a in range(par.Na):
@@ -41,12 +46,15 @@ def EGM(par, sol):
                 sol.a_next_e[t, n, :] = (par.m_grid - sol.c_e[t, n, :])*par.R
                 for i_a in range(par.Na):
                     if sol.a_next_e[t, n, i_a] > par.A_0:
+                        sol.c_e[t, n, i_a] = sol.c_e[t, n, i_a] + (sol.a_next_e[t, n, i_a] - par.A_0)/par.R
                         sol.a_next_e[t, n, i_a] = par.A_0
-                        sol.c_e[t, n, i_a] = par.m_grid[i_a] - par.A_0/par.R
+                        
+                    if sol.a_next_e[t, n, i_a] < par.L:
+                        print("Error: a_next_e out of bounds")
 
                 
-                V_e_next = interp1d(par.a_grid, par.V_e[t, n+1, :], fill_value='extrapolate')(sol.a_next_e[t, n, :])
+                V_e_next = interp1d(par.a_grid, par.V_e[t, n+1, :])(sol.a_next_e[t, n, :])
                 par.V_e[t, n, :] = utility(par, sol.c_e[t, n, :], par.r_e_m[t, t+n]) + par.delta * V_e_next
-                print(par.V_e[t, n, :])
+                # print(par.V_e[t, n, :])
             
 

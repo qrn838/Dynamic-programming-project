@@ -20,8 +20,12 @@ def value_function_employment(par, sol):
 def objective_function(a_next, par, i_a, i_t, i_n, V_e_next):
     r = par.r_e_m[i_t, i_t + i_n]
     c = par.a_grid[i_a] + par.w - a_next / (par.R)
+    penalty = 0
+    if c < 1e-6:
+        penalty = 1e8*(c)**2
+
     V_e_next_interp = interp1d(par.a_grid, V_e_next)
-    V_e = utility(par, c, r) + par.delta * V_e_next_interp(a_next)
+    V_e = utility(par, c, r) + par.delta * V_e_next_interp(a_next) - penalty
     return -V_e
 
 def value_function_employment_VFI(par, sol):
@@ -31,14 +35,18 @@ def value_function_employment_VFI(par, sol):
     c = np.zeros((par.T, par.N + par.M, par.Na))
 
     for i_t in range(par.T): 
-        for i_n in range(par.N + par.M - 1, -1, -1):
+        for i_n in reversed(range(par.N + par.M)):
             for i_a in range(par.Na):
                 if i_n == par.N + par.M - 1:  # Stationary state
                     r = par.r_e_m[i_t, i_t + i_n]
-                    c[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
-                    V_e[i_t, i_n, i_a] = utility(par, c[i_t, i_n, i_a], r) / (1 - par.delta)  ## stationary state
-                    a_next[i_t, i_n, i_a] = par.a_grid[i_a]
+                    # c[i_t, i_n, i_a] = par.a_grid[i_a] + par.w - par.a_grid[i_a] / par.R
+                    # a_next[i_t, i_n, i_a] = par.a_grid[i_a]
 
+                    c[i_t, i_n, i_a] = par.a_grid[i_a] + par.w                   
+                    a_next[i_t, i_n, i_a] = (par.a_grid[i_a] + par.w -c[i_t, i_n, i_a])*par.R
+
+                    V_e[i_t, i_n, i_a] = utility(par, c[i_t, i_n, i_a], r) / (1 - par.delta)  ## stationary state
+                    
                     
 
                 else:  # Consumption saving problem

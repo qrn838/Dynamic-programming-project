@@ -20,7 +20,7 @@ class ReferenceDependenceClass(EconModelClass):
 		sol = self.sol
 		sim = self.sim
 		# a. model
-		par.euler = True  # Euler equation or optimizer
+		par.euler = False  # Euler equation or optimizer
   		
 		par.N = 10 #Number of reference periods
 		par.M = 10 #Number of ekstra periods to reach stationary state
@@ -44,9 +44,9 @@ class ReferenceDependenceClass(EconModelClass):
 		par.delta = 0.995  ### Discount factor
 
 		#Savings
-		par.R = 1/par.delta + 0.01    #Interest rate
+		par.R = 1/par.delta + 0.001    #Interest rate
 		par.A_0 = 0.0  #Initial assets 
-		par.L = -2.0  # borrowing constraint
+		par.L = -0.9  # borrowing constraint
 
 
 		# EGM does not give the same as VFI if R is not 1/delta, if eta is different from zero, or if sigma is different from 1
