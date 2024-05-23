@@ -30,7 +30,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.T3 = par.N+1 #Time with low transfers
 		par.T = par.T1 + par.T2 + par.T3 + par.M #Total number of periods
 
-		par.Na = 20  #Number of grid points for savings
+		par.Na = 100  #Number of grid points for savings
 		
         # Income Structure
 		par.w = 1.0     #Normalize wages
@@ -39,12 +39,12 @@ class ReferenceDependenceClass(EconModelClass):
 		par.b3 = 0.4*par.w    # Low transfers
 
 		# Preferences
-		par.eta = 1.0  ### Reference dependence parameter
-		par.sigma = 1.0  ### Lambda in the paper
+		par.eta = 0.0  ### Reference dependence parameter
+		par.sigma = 2.0  ### Lambda in the paper
 		par.delta = 0.995  ### Discount factor
 
 		#Savings
-		par.R = 1/par.delta    #Interest rate
+		par.R = 1/par.delta + 0.01    #Interest rate
 		par.A_0 = 0.0  #Initial assets 
 		par.L = -2.0  # borrowing constraint
 
@@ -85,6 +85,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par = self.par
 		
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
+		par.m_grid = np.linspace(par.L+par.w, par.A_0+par.w, par.Na)  #Grid for cash on hand
 
         #Income when unemployed
 		par.income_u = np.zeros(par.T) 

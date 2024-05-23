@@ -9,10 +9,15 @@ def consumption_utility(x):
 def utility(par,c,r):
     """ utility function """
 	# a. utility
-    if c>=r:
-       u = consumption_utility(c) + par.eta*(consumption_utility(c)-consumption_utility(r))
-    else:
-       u = consumption_utility(c) + par.eta*par.sigma*(consumption_utility(c)-consumption_utility(r))
+    c = np.array(c)  # Ensure c is a NumPy array
+
+    u =np.where(c >= r, consumption_utility(c) + par.eta * (consumption_utility(c) - consumption_utility(r)), 
+                consumption_utility(c) + par.eta * par.sigma * (consumption_utility(c) - consumption_utility(r)))
+    
+    # if any(c)>=r:
+    #    u = consumption_utility(c) + par.eta*(consumption_utility(c)-consumption_utility(r))
+    # else:
+    #    u = consumption_utility(c) + par.eta*par.sigma*(consumption_utility(c)-consumption_utility(r))
 
     return u
 
