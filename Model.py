@@ -57,13 +57,13 @@ class ReferenceDependenceClass(EconModelClass):
 		
         # Income Structure
 		par.w = 1.0     		    #Normalize wages
-		par.welfare = 90/450	    # Welfare level
+		par.welfare = 90/675	    # Welfare level
 		# par.b1 = 342/675*par.w    # High transfers
 		# par.b2 = 171/675*par.w    # Medium transfers
-		par.b3 = 114/450*par.w      # Low transfers
+		par.b3 = 114/675*par.w      # Low transfers
 		par.b4 = par.welfare*par.w	# Welfare
 
-		par.b1 = 222/450*par.w    
+		par.b1 = 222/675*par.w    
 		par.b2 = par.b1
 
 		# Preferences
@@ -98,7 +98,7 @@ class ReferenceDependenceClass(EconModelClass):
 		############################################
 
 		par.noOfParams = 7				# Number of parameters
-		par.noSearchInits = 30			# Number of numerical minimizations to run
+		par.noSearchInits = 300			# Number of numerical minimizations to run
 
 		# The range from initial values are drawn (The same as in DellaVigna et al. (2017))
 		par.lb_rep = np.zeros(par.noOfParams)
@@ -126,7 +126,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.ub_N = 25
 		# Welfare
 		par.lb_wel = 0
-		par.ub_wel = 200/450
+		par.ub_wel = 200/675
 
 
 
