@@ -39,8 +39,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par.b3 = 0.4*par.w    # Low transfers
 
 		# Preferences
-		par.eta = 0.0  ### Reference dependence parameter
-		par.sigma = 2.0  ### Lambda in the paper
+		par.eta = 1.0  ### Reference dependence parameter
+		par.sigma = 1.0  ### Lambda in the paper
 		par.delta = 0.995  ### Discount factor
 
 		#Savings

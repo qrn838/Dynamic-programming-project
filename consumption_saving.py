@@ -386,7 +386,7 @@ def solve_forward_employment(par, sol, sim):
                     c[t, n] = a + par.w - a_next[t, n] / par.R
             else:
                 if n == 0:
-                    a = sim.a_next[t-1]
+                    a = a_next[t-1]
                     a_next_interp = interp1d(par.a_grid, sol.a_next_e[t, n, :], fill_value="extrapolate")
                     a_next[t, n] = a_next_interp(a)
                     c[t, n] = a + par.w - a_next[t, n] / par.R
