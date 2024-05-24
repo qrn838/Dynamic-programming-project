@@ -6,14 +6,14 @@ def consumption_utility(x):
 	return v
 
 
+
 def utility(par,c,r):
     """ utility function """
 	# a. utility
-    if c>=r:
-       u = consumption_utility(c) + par.eta*(consumption_utility(c)-consumption_utility(r))
-    else:
-       u = consumption_utility(c) + par.eta*par.lambdaa*(consumption_utility(c)-consumption_utility(r))
+    c = np.array(c)  # Ensure c is a NumPy array
 
+    u =np.where(c >= r, consumption_utility(c) + par.eta * (consumption_utility(c) - consumption_utility(r)), 
+                consumption_utility(c) + par.eta * par.lambdaa * (consumption_utility(c) - consumption_utility(r)))
     return u
 
 

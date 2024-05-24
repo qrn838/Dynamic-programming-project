@@ -52,7 +52,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.full_sample_estimation = False
 
 		
-		par.euler = False  # Euler equation or optimizer
+		par.euler = True  # Euler equation or optimizer
   		
 
 		# Time Structure
@@ -78,14 +78,14 @@ class ReferenceDependenceClass(EconModelClass):
 
 		# Preferences
 		par.eta = 1.0  		# Reference dependence parameter
-		par.lambdaa = 2.23  # Loss aversion
+		par.lambdaa = 2.0  # Loss aversion
 		par.delta = 0.995  	# Discount factor
 
 		#Savings
 		par.R = 1/par.delta + 0.0001   	#Interest rate
 		par.A_0 = 0.0  					#Initial assets 
-		par.L = -0.0  					#borrowing constraint
-		par.Na = 1  					#Number of grid points for savings
+		par.L = -0.9				#borrowing constraint
+		par.Na = 20			#Number of grid points for savings
 	
 
 		# Search costs for different types
@@ -156,6 +156,7 @@ class ReferenceDependenceClass(EconModelClass):
 		
 		
 		par.a_grid = np.linspace(par.L, par.A_0, par.Na)  #Grid for savings
+		par.m_grid = np.linspace(par.L+par.w, par.A_0+par.w, par.Na)  #Grid for cash-on-hand
 
 		par.type_shares2 = 1-par.type_shares1 - par.type_shares3
 
@@ -236,23 +237,23 @@ class ReferenceDependenceClass(EconModelClass):
 
 
 		# Container for value functions
-		par.V_e_t_a = np.zeros((par.types, par.T, par.Na))				# Value of getting employed at time t
-		par.V_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))		# Value function when employed
+		par.V_e_t_a = np.zeros((par.T, par.Na))				# Value of getting employed at time t
+		par.V_e = np.zeros((par.T, par.N+par.M, par.Na))		# Value function when employed
 
 		sol.s = np.zeros((par.types, par.T, par.Na))  		# Policy function search effort
 		sol.a_next = np.zeros((par.types, par.T, par.Na))  	# Policy function savings
 		sol.c = np.zeros((par.types, par.T, par.Na))		# Policy function consumption
 
-		sol.a_next_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))  # Policy function savings employed
-		sol.c_e = np.zeros((par.types, par.T, par.N+par.M, par.Na))		  # Policy function consumption employed
+		sol.a_next_e = np.zeros((par.T, par.N+par.M, par.Na))  # Policy function savings employed
+		sol.c_e = np.zeros((par.T, par.N+par.M, par.Na))		  # Policy function consumption employed
 
 		sim.s = np.zeros((par.types, par.T))  				# Search effort for each type
 		sim.s_total = np.zeros(par.T_sim)  					# Total search effort
 		sim.a_next = np.zeros((par.types, par.T))  			# Savings for each type
 		sim.c = np.zeros((par.types, par.T)) 				# Consumption for each type
 		sim.a = np.zeros((par.types, par.T))  				# Current assets for each type
-		sim.a_e = np.zeros((par.types, par.T,par.N+par.M))	# Current assets for each type when employed
-		sim.c_e = np.zeros((par.types, par.T,par.N+par.M))	# Consumption for each type when employed
+		sim.a_e = np.zeros((par.T,par.N+par.M))	# Current assets for each type when employed
+		sim.c_e = np.zeros((par.T,par.N+par.M))	# Consumption for each type when employed
 
 
 
