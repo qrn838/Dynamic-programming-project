@@ -149,23 +149,36 @@ def value_function_employment_EGM(par, sol):
 
                 # If always above use 1, if always below use 2, else use highest value function
                 for i_a in range(par.Na):
-                    if c1[i_a] >= par.r_e_m[t, t+n] and c2[i_a] >= par.r_e_m[t, t+n]:
+                    if c1[i_a] >= par.r_e_m[t, t+n] and c2[i_a] >= par.r_e_m[t, t+n] and sol.c_e[t,n+1,i_a]>=par.r_e_m[t,t+n+1] and not (par.N - 4 <= n <= par.N):
                         sol.c_e[t, n, i_a] = c1[i_a]
                         sol.a_next_e[t, n, i_a] = a1[i_a]
                         par.V_e[t, n, i_a] = V1[i_a]
-                    elif c1[i_a] < par.r_e_m[t, t+n] and c2[i_a] < par.r_e_m[t, t+n]:
+                    elif c1[i_a] < par.r_e_m[t, t+n] and c2[i_a] < par.r_e_m[t, t+n] and sol.c_e[t,n+1,i_a]< par.r_e_m[t,t+n+1]  and not (par.N - 4 <= n <= par.N): # and n > par.N:
                         sol.c_e[t, n, i_a] = c2[i_a]
                         sol.a_next_e[t, n, i_a] = a2[i_a]
                         par.V_e[t, n, i_a] = V2[i_a]
                     else:
-                        if V1[i_a]>=V2[i_a]:
-                            sol.c_e[t, n, i_a] = c1[i_a]
-                            sol.a_next_e[t, n, i_a] = a1[i_a]
-                            par.V_e[t, n, i_a] = V1[i_a]
+                        if par.eta == 0 or par.lambdaa == 1:
+                            # Utility function is not kinked
+                            if V1[i_a]>=V2[i_a]:
+                                sol.c_e[t, n, i_a] = c1[i_a]
+                                sol.a_next_e[t, n, i_a] = a1[i_a]
+                                par.V_e[t, n, i_a] = V1[i_a]
+                            else:
+                                sol.c_e[t, n, i_a] = c2[i_a]
+                                sol.a_next_e[t, n, i_a] = a2[i_a]
+                                par.V_e[t, n, i_a] = V2[i_a]
                         else:
-                            sol.c_e[t, n, i_a] = c2[i_a]
-                            sol.a_next_e[t, n, i_a] = a2[i_a]
-                            par.V_e[t, n, i_a] = V2[i_a]
+                            # Run optimizer
+                            lower_bound = par.L
+                            upper_bound = (par.a_grid[i_a] + par.w) * par.R - 1e-6  # consumption must be positive
+                            upper_bound = min(upper_bound, par.A_0)
+                            result = minimize_scalar(objective_function, bounds=(lower_bound, upper_bound), args=(par, i_a, t, n, par.V_e[t, n + 1, :]), method='bounded')
+                            if result.success:
+                                sol.a_next_e[t, n, i_a] = result.x
+                                par.V_e[t, n, i_a] = -result.fun
+                                sol.c_e[t, n, i_a] = par.a_grid[i_a] + par.w - sol.a_next_e[t, n, i_a] / par.R
+                        
     par.V_e_t_a = par.V_e[:, 0, :]
 
 
