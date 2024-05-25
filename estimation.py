@@ -7,7 +7,8 @@ from scipy.optimize import minimize
 import scipy.optimize as optimize
 
 from Funcs import *
-from hand_to_mouth import *
+from solve_hand_to_mouth import *
+from solve_consumption_saving import *
 from scipy.io import loadmat
 
 
@@ -51,7 +52,12 @@ def sum_squared_diff_moments(theta,model,est_par,weight=False):
 
     # Solve the model
     model.allocate()
-    moments =  model.solve_HTM() 
+    if par.model == 'HTM':
+        moments = model.solve_HTM()
+    elif par.model == 'ConSav':
+        moments = model.solve_ConSav()
+    else:
+        moments = model.solve()
     
     # Objective function
     weight_mat = data.vc_controls_before   
@@ -82,13 +88,23 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=False):
     par.b1 = 222/675*par.w
     par.b2 = par.b1
     model.allocate()
-    moments_before_model =  model.solve_HTM() 
+    if par.model == 'HTM':
+        moments_before_model =  model.solve_HTM()
+    elif par.model == 'ConSav':
+        moments_before_model = model.solve_ConSav() 
+    else:
+        moments_before_model = model.solve()
 
     # Solve model after
     par.b1 = 342.0/675.0
     par.b2 = 171.0/675.0
     model.allocate()
-    moments_after_model = model.solve_HTM()
+    if par.model == 'HTM':
+        moments_after_model = model.solve_HTM()
+    elif par.model == 'ConSav':
+        moments_after_model = model.solve_ConSav()
+    else:
+        moments_after_model = model.solve()
 
     # Combine model results from before and after refor
     model_moments = np.concatenate((moments_before_model, moments_after_model))    

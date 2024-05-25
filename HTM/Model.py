@@ -4,7 +4,7 @@ import scipy
 from copy import deepcopy
 from scipy.io import loadmat
 
-from hand_to_mouth import *
+from solve_hand_to_mouth import *
 
 from EconModel import EconModelClass
 

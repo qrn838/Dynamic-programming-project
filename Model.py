@@ -5,8 +5,8 @@ from copy import deepcopy
 from scipy.io import loadmat
 
 from EconModel import EconModelClass
-from hand_to_mouth import *
-from consumption_saving import *
+from solve_hand_to_mouth import *
+from solve_consumption_saving import *
 
 
 
@@ -47,14 +47,17 @@ class ReferenceDependenceClass(EconModelClass):
 		data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
 		####################################################
 
-
+		####### Options ########
 		# Estimate full sample or only before
 		par.full_sample_estimation = False
 
-		
-		par.euler = True  # Euler equation or optimizer
-  		
+		# Use EGM to get value of getting employed
+		par.euler = True  
 
+		# Hand-to-mouth or Consumption-Saving
+		par.model = 'Mixed'  # 'ConSav' or 'HTM' or 'Mixed'
+		#####################
+  		
 		# Time Structure
 		par.N = 10 #Number of reference periods
 		par.M = 10 #Number of ekstra periods to reach stationary state
@@ -77,7 +80,7 @@ class ReferenceDependenceClass(EconModelClass):
 		# par.b4 = par.b3
 
 		# Preferences
-		par.eta = 0.0  		# Reference dependence parameter
+		par.eta = 1.0  		# Reference dependence parameter
 		par.lambdaa = 2.0  # Loss aversion
 		par.delta = 0.995  	# Discount factor
 
@@ -85,7 +88,8 @@ class ReferenceDependenceClass(EconModelClass):
 		par.R = 1/par.delta + 0.0001   	#Interest rate
 		par.A_0 = 0.0  					#Initial assets 
 		par.L = -0.9				#borrowing constraint
-		par.Na = 20			#Number of grid points for savings
+		par.Na = 10			#Number of grid points for savings
+		par.HTM_share = 0.5  # Share of Hand-to-mouth agents in mixed model
 	
 
 		# Search costs for different types
@@ -273,8 +277,22 @@ class ReferenceDependenceClass(EconModelClass):
 		value_function_employment_ConSav(self.par, self.sol)
 		solve_search_and_consumption_ConSav(self.par, self.sol)
 		sim_search_effort_ConSav(self.par, self.sol, self.sim)
+		sim_s = self.sim.s_total
+		return sim_s
 	
 	def solve_HTM(self):
 		""" solve the model for Hand-to-Mouth agent"""
 		sim_s = sim_search_effort_HTM(self.par)
 		return sim_s
+	
+	def solve(self):
+		if self.par.model == 'ConSav':
+			sim_s = self.solve_ConSav()
+		elif self.par.model == 'HTM':
+			sim_s = self.solve_HTM()
+		else:
+			sim_s_consav = self.solve_ConSav()
+			sim_s_htm = self.solve_HTM()
+			sim_s = self.par.HTM_share*sim_s_htm + (1-self.par.HTM_share)*sim_s_consav
+		return sim_s
+

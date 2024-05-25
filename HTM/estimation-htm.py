@@ -7,7 +7,7 @@ from scipy.optimize import minimize
 import scipy.optimize as optimize
 
 from Funcs import *
-from hand_to_mouth import *
+from solve_hand_to_mouth import *
 from scipy.io import loadmat
 
 

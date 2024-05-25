@@ -79,6 +79,8 @@ def value_function_employment_VFI(par, sol):
 ############## EGM #####################
 def value_function_employment_EGM(par, sol):
     for t in range(par.T):
+        c1 = np.zeros((par.Na, par.N + par.M ))
+        c2 = np.zeros((par.Na, par.N + par.M ))
         for n in reversed(range(par.N + par.M )):
      
 
@@ -104,11 +106,11 @@ def value_function_employment_EGM(par, sol):
 
                 m_temp1 = np.zeros(par.Na+1)
                 c_temp1 = np.zeros(par.Na+1)
-                c1 = np.zeros(par.Na)
+             
                 a1 = np.zeros(par.Na)
                 m_temp2 = np.zeros(par.Na+1)
                 c_temp2 = np.zeros(par.Na+1)
-                c2 = np.zeros(par.Na)
+            
                 a2 = np.zeros(par.Na)
                 V1 = np.zeros(par.Na)
                 V2 = np.zeros(par.Na)
@@ -125,47 +127,46 @@ def value_function_employment_EGM(par, sol):
                     c_temp2[i_a+1] = inv_marg_utility_2(par, par.delta*par.R*mu_plus[i_a])
                     m_temp2[i_a+1] = c_temp2[i_a+1] + par.a_grid[i_a]/par.R
 
-                c1 = interp1d(m_temp1, c_temp1, fill_value='extrapolate')(par.m_grid[:])
-                a1 = (par.m_grid - c1)*par.R
+                c1[:,n] = interp1d(m_temp1, c_temp1, fill_value='extrapolate')(par.m_grid[:])
+                a1 = (par.m_grid - c1[:,n])*par.R
 
-                c2 = interp1d(m_temp2, c_temp2, fill_value='extrapolate')(par.m_grid[:])
-                a2 = (par.m_grid - c2)*par.R
+                c2[:,n] = interp1d(m_temp2, c_temp2, fill_value='extrapolate')(par.m_grid[:])
+                a2 = (par.m_grid - c2[:,n])*par.R
 
                 for i_a in range(par.Na):
                     if a1[i_a] > par.A_0:
-                        c1[i_a] = c1[i_a] + (a1[i_a] - par.A_0)/par.R
+                        c1[i_a,n] = c1[i_a,n] + (a1[i_a] - par.A_0)/par.R
                         a1[i_a] = par.A_0
                     if a1[i_a] < par.L:
                         print("Error: a_next_e out of bounds")
                     
                     if a2[i_a] > par.A_0:
-                        c2[i_a] = c2[i_a] + (a2[i_a] - par.A_0)/par.R
+                        c2[i_a,n] = c2[i_a,n] + (a2[i_a] - par.A_0)/par.R
                         a2[i_a] = par.A_0
                     if a2[i_a] < par.L:
                         print("Error: a_next_e out of bounds")
 
-                V1 = utility(par, c1, par.r_e_m[t, t+n]) + par.delta * interp1d(par.a_grid, par.V_e[t, n+1, :])(a1)
-                V2 = utility(par, c2, par.r_e_m[t, t+n]) + par.delta * interp1d(par.a_grid, par.V_e[t, n+1, :])(a2)
+                V1 = utility(par, c1[:,n], par.r_e_m[t, t+n]) + par.delta * interp1d(par.a_grid, par.V_e[t, n+1, :])(a1)
+                V2 = utility(par, c2[:,n], par.r_e_m[t, t+n]) + par.delta * interp1d(par.a_grid, par.V_e[t, n+1, :])(a2)
 
-                # If always above use 1, if always below use 2, else use highest value function
+                # If no kink use euler else optimizer
                 for i_a in range(par.Na):
-                    if c1[i_a] >= par.r_e_m[t, t+n] and c2[i_a] >= par.r_e_m[t, t+n] and sol.c_e[t,n+1,i_a]>=par.r_e_m[t,t+n+1] and not (par.N - 4 <= n <= par.N):
-                        sol.c_e[t, n, i_a] = c1[i_a]
+                    if c1[i_a,n] >= par.r_e_m[t, t+n] and c2[i_a,n] >= par.r_e_m[t, t+n] and c1[i_a,n+1] >= par.r_e_m[t, t+n+1] and c2[i_a,n+1] >= par.r_e_m[t, t+n+1] and not (par.N - 1 <= n <= par.N):
+                        sol.c_e[t, n, i_a] = c1[i_a,n]
                         sol.a_next_e[t, n, i_a] = a1[i_a]
                         par.V_e[t, n, i_a] = V1[i_a]
-                    elif c1[i_a] < par.r_e_m[t, t+n] and c2[i_a] < par.r_e_m[t, t+n] and sol.c_e[t,n+1,i_a]< par.r_e_m[t,t+n+1]  and not (par.N - 4 <= n <= par.N): # and n > par.N:
-                        sol.c_e[t, n, i_a] = c2[i_a]
+                    elif c1[i_a,n] < par.r_e_m[t, t+n] and c2[i_a,n] < par.r_e_m[t, t+n] and c1[i_a,n+1] < par.r_e_m[t, t+n+1] and c2[i_a,n+1] < par.r_e_m[t, t+n+1] and not (par.N - 1 <= n <= par.N): 
+                        sol.c_e[t, n, i_a] = c2[i_a,n]
                         sol.a_next_e[t, n, i_a] = a2[i_a]
                         par.V_e[t, n, i_a] = V2[i_a]
                     else:
                         if par.eta == 0 or par.lambdaa == 1:
-                            # Utility function is not kinked
                             if V1[i_a]>=V2[i_a]:
-                                sol.c_e[t, n, i_a] = c1[i_a]
+                                sol.c_e[t, n, i_a] = c1[i_a,n]
                                 sol.a_next_e[t, n, i_a] = a1[i_a]
                                 par.V_e[t, n, i_a] = V1[i_a]
                             else:
-                                sol.c_e[t, n, i_a] = c2[i_a]
+                                sol.c_e[t, n, i_a] = c2[i_a,n]
                                 sol.a_next_e[t, n, i_a] = a2[i_a]
                                 par.V_e[t, n, i_a] = V2[i_a]
                         else:
@@ -305,9 +306,9 @@ def solve_search_and_consumption_ConSav(par, sol):
                         V_u_next_interp = interp1d(par.a_grid, V_u[type,t+1,:])
                         V_u_next = V_u_next_interp(a_next[type,t, i_a])
                         s[type,t,i_a] = inv_marg_cost(par, par.delta*(V_e_next-V_u_next))[type]
-                        if s[type,t,i_a] > 1:
-                            print('sol.s')
-                            print(s[type,t,i_a])
+                        # if s[type,t,i_a] > 1:
+                        #     print('sol.s')
+                        #     print(s[type,t,i_a])
                         c[type,t,i_a] = par.a_grid[i_a] + par.income_u[t] - a_next[type,t,i_a] / (par.R)
                         
                 
@@ -370,11 +371,11 @@ def sim_search_effort_ConSav(par, sol, sim):
     # Calculate total search effort as weighted average over types
     for t in range(par.T):
         if t == 0:
-            s[t] = type_shares @ sim.s[:,t]
+            s[t] = type_shares @ sim.s[:par.types,t]
         else:
-            type_shares = type_shares * (1-sim.s[:,t-1])
+            type_shares = type_shares * (1-sim.s[:par.types,t-1])
             type_shares = type_shares / sum(type_shares)
-            s[t] = type_shares @ sim.s[:,t]
+            s[t] = type_shares @ sim.s[:par.types,t]
     
     sim.s_total[:] = s[:par.T_sim]
 
@@ -382,7 +383,7 @@ def sim_search_effort_ConSav(par, sol, sim):
 
 
 
-###########  Not made with types yet  ##############
+###########    ##############
 def solve_forward_employment_ConSav(type, par, sol, sim):
 
     a_next = np.zeros((par.T, par.N+par.M))
