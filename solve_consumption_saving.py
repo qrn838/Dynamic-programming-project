@@ -146,8 +146,8 @@ def value_function_employment_EGM(par, sol):
                     if a2[i_a] < par.L:
                         print("Error: a_next_e out of bounds")
 
-                V1 = utility(par, c1[:,n], par.r_e_m[t, t+n]) + par.delta * interp1d(par.a_grid, par.V_e[t, n+1, :])(a1)
-                V2 = utility(par, c2[:,n], par.r_e_m[t, t+n]) + par.delta * interp1d(par.a_grid, par.V_e[t, n+1, :])(a2)
+                V1 = utility(par, c1[:,n], par.r_e_m[t, t+n]) + par.delta * interp1d(par.a_grid, par.V_e[t, n+1, :], fill_value='extrapolate')(a1)
+                V2 = utility(par, c2[:,n], par.r_e_m[t, t+n]) + par.delta * interp1d(par.a_grid, par.V_e[t, n+1, :], fill_value='extrapolate')(a2)
 
                 # If no kink use euler else optimizer
                 for i_a in range(par.Na):

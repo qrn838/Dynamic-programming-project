@@ -49,7 +49,7 @@ class ReferenceDependenceClass(EconModelClass):
 
 		####### Options ########
 		# Estimate full sample or only before
-		par.full_sample_estimation = False
+		par.full_sample_estimation = True
 
 		# Use EGM to get value of getting employed
 		par.euler = True  
@@ -98,7 +98,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.cost3 = 570.0
 		par.gamma = 0.06	# Inverse of elasticity of search effort w.r.t. value of employment
 
-		par.types = 2	# Number of types
+		par.types = 3	# Number of types
 
 		#Share of types (Type 2 is residual)
 		par.type_shares1 = 1.0	
