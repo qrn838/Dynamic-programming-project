@@ -80,7 +80,7 @@ class ReferenceDependenceClass(EconModelClass):
 		# par.b4 = par.b3
 
 		# Preferences
-		par.eta = 1.0  		# Reference dependence parameter
+		par.eta = 0.0  		# Reference dependence parameter
 		par.lambdaa = 2.0  # Loss aversion
 		par.delta = 0.995  	# Discount factor
 
