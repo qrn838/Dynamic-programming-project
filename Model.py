@@ -98,17 +98,17 @@ class ReferenceDependenceClass(EconModelClass):
 		############################################
 
 		par.noOfParams = 7				# Number of parameters
-		par.noSearchInits = 300			# Number of numerical minimizations to run
+		par.noSearchInits = 100			# Number of numerical minimizations to run
 
 		# The range from initial values are drawn (The same as in DellaVigna et al. (2017))
 		par.lb_rep = np.zeros(par.noOfParams)
 		par.ub_rep = np.ones(par.noOfParams)
 		# Highest search cost
-		par.lb_hsc = 50
+		par.lb_hsc = 200
 		par.ub_hsc = 1000
 		# Medium search cost
-		par.lb_msc = 30
-		par.ub_msc = 100
+		par.lb_msc = 100
+		par.ub_msc = 200
 		# Lowest search cost
 		par.lb_lsc = 0
 		par.ub_lsc = 100
@@ -116,7 +116,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.lb_gam = 0.1
 		par.ub_gam = 1.3
 		# Shares of types
-		par.lb_share = 0
+		par.lb_share = 0.1
 		par.ub_share = 2/par.types
 		# Sigma
 		par.lb_sig = 1
