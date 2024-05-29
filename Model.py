@@ -85,7 +85,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.delta = 0.995  	# Discount factor
 
 		#Savings
-		par.R = 1/par.delta + 0.0001   	#Interest rate
+		par.R = 1/par.delta + 0.001   	#Interest rate
 		par.A_0 = 0.0  					#Initial assets 
 		par.L = -0.9				#borrowing constraint
 		par.Na = 10			#Number of grid points for savings
