@@ -75,9 +75,8 @@ def sum_squared_diff_moments(theta,model,est_par,weight=False):
 
 
 
-
-def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=False):
-    ''' Objective function for estimating the model on the full sample using simulated moments'''
+def model_moments_combined(model,est_par,theta):
+    
 
     #Update parameters
     par = model.par
@@ -107,18 +106,29 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=False):
         moments_after_model = model.solve()
 
     # Combine model results from before and after refor
-    model_moments = np.concatenate((moments_before_model, moments_after_model))    
+    model_moments = np.concatenate((moments_before_model, moments_after_model)) 
+
+    #Set paramters to before reform again
+    par.b1 = 222/675*par.w
+    par.b2 = par.b1
+    model.allocate() 
+
+    return model_moments
+
+
+def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=True):
+    ''' Objective function for estimating the model on the full sample using simulated moments'''
+
+    #Update parameters
+    par = model.par
+    data = model.data
+
+    model_moments = model_moments_combined(model,est_par,theta)   
 
 
     ###### Combine data moments from before and after reform ###########
-    rows_before, cols_before = data.vc_controls_before.shape
-    rows_after, cols_after = data.vc_controls_after.shape
 
-    weight_mat = np.zeros((rows_before + rows_after, cols_before + cols_after))
-
-    weight_mat[:rows_before, :cols_before] =  data.vc_controls_before
-    weight_mat[rows_after:, cols_after:] = data.vc_controls_after  
-
+    weight_mat = data.weight_mat
     
     moments_before = data.moments_before
     moments_before = moments_before.reshape(35)
@@ -137,11 +147,6 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=False):
     else:           # Identity matrix is used
         res = (diff.T @ np.eye(70) @ diff)*100
 
-    #Set paramters to before reform again
-    par.b1 = 222/675*par.w
-    par.b2 = par.b1
-    model.allocate()
-     
     return res
 
 def getSearchInits_benchmark_HTM(model):

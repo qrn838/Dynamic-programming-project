@@ -45,6 +45,14 @@ class ReferenceDependenceClass(EconModelClass):
 		data.vc_controls = data.data['VCcontrol']
 		data.vc_controls_before = data.vc_controls[1:data.num_elements_before, 1:data.num_elements_before]
 		data.vc_controls_after = data.vc_controls[data.num_elements_before+1:, data.num_elements_before+1:]
+
+		# Weight matrix
+		data.rows_before, data.cols_before = data.vc_controls_before.shape 
+		data.rows_after, data.cols_after = data.vc_controls_after.shape
+		
+		data.weight_mat = np.zeros((data.rows_before + data.rows_after, data.cols_before + data.cols_after))
+		data.weight_mat[:data.rows_before, :data.cols_before] =  data.vc_controls_before
+		data.weight_mat[data.rows_after:, data.cols_after:] = data.vc_controls_after  
 		####################################################
 
 		####### Options ########
