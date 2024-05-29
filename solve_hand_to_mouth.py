@@ -12,7 +12,7 @@ def value_function_employment_HTM(par, c, t):
     r = par.r_e_future[t,:]         # reference points next N period from getting employed
     ref_diffs = np.zeros(par.N)     # Difference between future reference points and future consumption
     for i in range(par.N):
-         ref_diffs[i] = par.delta**(i+1) * (consumption_utility(c) - consumption_utility(r[i]))
+         ref_diffs[i] = par.delta**(i) * (consumption_utility(c) - consumption_utility(r[i]))
 
     V = consumption_utility(c)/(1-par.delta)  + par.eta * np.sum(ref_diffs) # value of getting employed at time t
 

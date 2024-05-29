@@ -59,7 +59,7 @@ class ReferenceDependenceClass(EconModelClass):
 		#####################
   		
 		# Time Structure
-		par.N = 10 #Number of reference periods
+		par.N = 14 #Number of reference periods
 		par.M = 10 #Number of ekstra periods to reach stationary state
 		# Transfers Structure
 		par.T1 = 6   #Time with high transfers
@@ -116,10 +116,10 @@ class ReferenceDependenceClass(EconModelClass):
 		par.lb_c = 200
 		par.ub_c = 400
 		# Highest search cost
-		par.lb_hsc = 100
-		par.ub_hsc = 1000
+		par.lb_hsc = 300
+		par.ub_hsc = 700
 		# Medium search cost
-		par.lb_msc = 30
+		par.lb_msc = 50
 		par.ub_msc = 100
 		# Lowest search cost
 		par.lb_lsc = 0
