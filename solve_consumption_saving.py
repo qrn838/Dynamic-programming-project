@@ -111,8 +111,7 @@ def value_function_employment_EGM(par, sol):
                 V1 = np.zeros(par.Na)
                 V2 = np.zeros(par.Na)
 
-                m_plus = par.a_grid + par.w     # Cash-on-hand for next period
-                c_plus = interp1d(par.m_grid, sol.c_e[t, n+1, :], fill_value='extrapolate')(m_plus) # Consumption for next period
+                c_plus = sol.c_e[t, n+1, :] # Consumption for next period
                 mu_plus = marginal_utility(par, c_plus, par.r_e_m[t, t+n+1])    # Marginal utility for next period
 
                 # Solve above and below ref point
