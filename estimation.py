@@ -143,20 +143,30 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=True):
     diff = (model_moments-data_moments)
 
     if weight:      # Weights are used
-        res = (diff.T @ weight_mat @ diff)*100 #res = (diff.T @ np.linalg.inv(weight_mat) @ diff)*100
+        res = (diff.T @ weight_mat @ diff)*1e6      # Multiplying by a million otherwise the optimizer will not work as the inverse variances are very small
     else:           # Identity matrix is used
         res = (diff.T @ np.eye(70) @ diff)*100
 
     return res
 
-def getSearchInits_benchmark_HTM(model):
-    par = model.par
+# Calculates jacobian based on small changes (epsilon)
+def manual_jacobian(model, est_par, par, epsilon=1e-5):
+    '''Calculate the Jacobian using finite differences'''
 
-    lb = np.array(par.lb_rep.T,par.noSearchInits)
-    ub = np.arry(par.ub_rep.T,par.noSearchInits)
-    searchInits = lb + (ub - lb) * np.random(par.noOfParams,par.noSearchInits)
-
-    return searchInits
+    baseline_moments = model_moments_combined(model, est_par, par)
+    num_moments = len(baseline_moments)
+    num_params = len(est_par)
+    
+    jacobian = np.zeros((num_params, num_moments))  # Set up empty matrix to store the jacobian
+    
+    for i in range(num_params): # Loop over the parameters
+        new_par = np.array(par) # Copy the parameter vector
+        new_par[i] += epsilon   # Add a small perturbation to the i-th parameter
+        perturbed_moments = model_moments_combined(model, est_par, new_par) # Calculate the moments with the perturbed parameter
+        jacobian[i, :] = (perturbed_moments - baseline_moments) / epsilon   # Calculate the i-th column of the jacobian
+        new_par = np.array(par) # Reset vector to the original parameter vector for the next iteration
+    
+    return jacobian
 
     
     

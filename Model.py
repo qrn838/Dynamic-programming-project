@@ -67,7 +67,7 @@ class ReferenceDependenceClass(EconModelClass):
 		#####################
   		
 		# Time Structure
-		par.N = 14 #Number of reference periods
+		par.N = 13 #Number of reference periods
 		par.M = 10 #Number of ekstra periods to reach stationary state
 		# Transfers Structure
 		par.T1 = 6   #Time with high transfers
@@ -152,7 +152,7 @@ class ReferenceDependenceClass(EconModelClass):
 		par.ub_delta = 0.999
 		# L
 		par.lb_L = -0.9
-		par.ub_L = 0.0
+		par.ub_L = -0.001
 
 		################################################
 		# Needed for EconModelClass (not used)
