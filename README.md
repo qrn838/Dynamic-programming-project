@@ -14,6 +14,7 @@ This project follows the paper "Reference-Dependent Job Search: Evidence From Hu
 - solve_consumption_savings.py: This file contains the functions used to solve the consumption-savings model.
 - solve_hand_to_mouth.py: This file contains the functions used to solve the HtM model. 
 
+## Required packages
 
 Running the model requires standard python packages.
 Further requirements to run model:
