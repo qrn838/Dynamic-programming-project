@@ -53,6 +53,7 @@ class ReferenceDependenceClass(EconModelClass):
 		data.weight_mat = np.zeros((data.rows_before + data.rows_after, data.cols_before + data.cols_after))
 		data.weight_mat[:data.rows_before, :data.cols_before] =  data.vc_controls_before
 		data.weight_mat[data.rows_after:, data.cols_after:] = data.vc_controls_after  
+		data.weight_mat = np.linalg.inv(data.weight_mat)
 		####################################################
 
 		####### Options ########

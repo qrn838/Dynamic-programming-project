@@ -144,9 +144,37 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=True):
     diff = (model_moments-data_moments)
 
     if weight:      # Weights are used
-        res = (diff.T @ weight_mat @ diff)*1e6      # Multiplying by a million otherwise the optimizer will not work as the inverse variances are very small
+        res = (diff.T @ weight_mat @ diff) #*1e6      # Multiplying by a million otherwise the optimizer will not work as the inverse variances are very small
     else:           # Identity matrix is used
         res = (diff.T @ np.eye(70) @ diff)*100
+
+    return res
+
+def goodness_of_fit(theta, model, est_par):
+    ''' Calculate the goodness of fit for the estimated model'''
+
+    #Update parameters
+    par = model.par
+    data = model.data
+    par = updatepar(par,est_par,theta)
+
+    # Solve the model
+    model.allocate()
+    model_moments = model_moments_combined(model,est_par,theta)  
+
+    # Objective function
+    weight_mat = data.weight_mat
+    moments_before = data.moments_before
+    moments_before = moments_before.reshape(35)
+
+    moments_after = data.moments_after
+    moments_after = moments_after.reshape(35)
+
+    data_moments = np.concatenate((moments_before, moments_after))
+
+    diff = (model_moments-data_moments)
+
+    res = (diff.T @ weight_mat @ diff)
 
     return res
 
