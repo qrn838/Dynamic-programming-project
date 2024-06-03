@@ -95,7 +95,7 @@ class ReferenceDependenceClass(EconModelClass):
 		#Savings
 		par.R = 1/par.delta + 0.001   	#Interest rate
 		par.A_0 = 0.0  					#Initial assets 
-		par.L = -0.9				#borrowing constraint
+		par.L = -0.5				#borrowing constraint
 		par.Na = 10			#Number of grid points for savings
 		par.HTM_share = 0.5  # Share of Hand-to-mouth agents in mixed model
 	

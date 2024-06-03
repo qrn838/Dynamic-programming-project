@@ -5,6 +5,7 @@ import numpy as np
 import copy
 from scipy.optimize import minimize
 import scipy.optimize as optimize
+import numpy.linalg as la
 
 from Funcs import *
 from solve_hand_to_mouth import *
@@ -168,7 +169,32 @@ def manual_jacobian(model, est_par, par, epsilon=1e-5):
     
     return jacobian
 
-    
-    
+def standard_errors(jac, weight_matrix, data_moments, model_moments, N = 70):
+    variance = np.zeros(jac.shape[0])*np.nan
 
+
+    print(jac.shape)
+
+    # diagonal Variance matirx for data moments
+    o = model_moments - data_moments
+    omega_matrix = o @ o.T
+    print(omega_matrix.shape)
+
+    # Compute (G'WG)
+    gwg_inv = la.pinv(jac @ weight_matrix @ jac.T)
+    print(gwg_inv.shape)
+
+    # Compute the middle term G'WVW'G
+    middle_term =  jac @ weight_matrix @ omega_matrix @ weight_matrix.T @ jac.T
+
+    print(middle_term.shape)
+
+    # Compute the variance
+    variance = gwg_inv @ middle_term @ gwg_inv.T
+    print(variance.shape)
+    variance = np.diag(variance) * 1/N
+
+    standard_errors = np.sqrt(variance/N)
+
+    return standard_errors
 		
