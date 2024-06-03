@@ -150,6 +150,11 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=True):
 
     return res
 
+
+
+
+############# Attempted standard error imlementation ####################
+
 # Calculates jacobian based on small changes (epsilon)
 def manual_jacobian(model, est_par, par, epsilon=1e-5):
     '''Calculate the Jacobian using finite differences'''
@@ -169,13 +174,25 @@ def manual_jacobian(model, est_par, par, epsilon=1e-5):
     
     return jacobian
 
-def standard_errors(jac, weight_matrix, data_moments, model_moments, N = 70):
-    variance = np.zeros(jac.shape[0])*np.nan
 
+def standard_errors(model, est_par, par):
 
-    print(jac.shape)
+    jac = manual_jacobian(model, est_par, par)
 
-    # diagonal Variance matirx for data moments
+    model_moments = model_moments_combined(model, est_par, par)
+    model_moments = model_moments.reshape(70,1)
+    
+
+    moments_before = model.data.moments_before
+    moments_before = moments_before.reshape(35)
+    moments_after = model.data.moments_after
+    moments_after = moments_after.reshape(35)
+    data_moments = np.concatenate((moments_before, moments_after))
+    data_moments = data_moments.reshape(70,1)
+
+    weight_matrix = model.data.weight_mat
+
+    # Variance matirx Omega
     o = model_moments - data_moments
     omega_matrix = o @ o.T
     print(omega_matrix.shape)
@@ -184,7 +201,7 @@ def standard_errors(jac, weight_matrix, data_moments, model_moments, N = 70):
     gwg_inv = la.pinv(jac @ weight_matrix @ jac.T)
     print(gwg_inv.shape)
 
-    # Compute the middle term G'WVW'G
+    # Compute the middle term G'WOW'G
     middle_term =  jac @ weight_matrix @ omega_matrix @ weight_matrix.T @ jac.T
 
     print(middle_term.shape)
@@ -192,9 +209,9 @@ def standard_errors(jac, weight_matrix, data_moments, model_moments, N = 70):
     # Compute the variance
     variance = gwg_inv @ middle_term @ gwg_inv.T
     print(variance.shape)
-    variance = np.diag(variance) * 1/N
+    variance = np.diag(variance) * 1/70
 
-    standard_errors = np.sqrt(variance/N)
+    standard_errors = np.sqrt(variance/70)
 
     return standard_errors
 		

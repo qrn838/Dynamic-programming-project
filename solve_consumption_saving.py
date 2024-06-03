@@ -150,14 +150,19 @@ def value_function_employment_EGM(par, sol):
 
                 # If no kink use euler else optimizer
                 for i_a in range(par.Na):
-                    if c1[i_a,n] >= par.r_e_m[t, t+n] and c2[i_a,n] >= par.r_e_m[t, t+n] and c1[i_a,n+1] >= par.r_e_m[t, t+n+1] and c2[i_a,n+1] >= par.r_e_m[t, t+n+1] and not (par.N - 1 <= n <= par.N):
+                    if c1[i_a,n] >= par.r_e_m[t, t+n] and c2[i_a,n] >= par.r_e_m[t, t+n] and c1[i_a,n+1] >= par.r_e_m[t, t+n+1] and c2[i_a,n+1] >= par.r_e_m[t, t+n+1] and not (par.N - 6 <= n <= par.N):
                         sol.c_e[t, n, i_a] = c1[i_a,n]
                         sol.a_next_e[t, n, i_a] = a1[i_a]
                         par.V_e[t, n, i_a] = V1[i_a]
-                    elif c1[i_a,n] < par.r_e_m[t, t+n] and c2[i_a,n] < par.r_e_m[t, t+n] and c1[i_a,n+1] < par.r_e_m[t, t+n+1] and c2[i_a,n+1] < par.r_e_m[t, t+n+1] and not (par.N - 1 <= n <= par.N): 
+                    elif c1[i_a,n] < par.r_e_m[t, t+n] and c2[i_a,n] < par.r_e_m[t, t+n] and c1[i_a,n+1] < par.r_e_m[t, t+n+1] and c2[i_a,n+1] < par.r_e_m[t, t+n+1] and not (par.N - 6 <= n <= par.N): 
                         sol.c_e[t, n, i_a] = c2[i_a,n]
                         sol.a_next_e[t, n, i_a] = a2[i_a]
                         par.V_e[t, n, i_a] = V2[i_a]
+                    elif par.eta == 0:
+                        sol.c_e[t, n, i_a] = c1[i_a,n]
+                        sol.a_next_e[t, n, i_a] = a1[i_a]
+                        par.V_e[t, n, i_a] = V1[i_a]
+
                     else:
                         # Run optimizer
                         lower_bound = par.L
