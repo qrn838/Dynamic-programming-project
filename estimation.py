@@ -144,7 +144,7 @@ def sum_squared_diff_moments_before_and_after(theta,model,est_par,weight=True):
     diff = (model_moments-data_moments)
 
     if weight:      # Weights are used
-        res = (diff.T @ weight_mat @ diff) #*1e6      # Multiplying by a million otherwise the optimizer will not work as the inverse variances are very small
+        res = (diff.T @ weight_mat @ diff) 
     else:           # Identity matrix is used
         res = (diff.T @ np.eye(70) @ diff)*100
 
